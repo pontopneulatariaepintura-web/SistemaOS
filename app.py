@@ -1,50 +1,62 @@
 from flask import Flask, render_template, request, redirect, session
 from werkzeug.security import generate_password_hash, check_password_hash
+from datetime import datetime
 
-from config import Config
 from extensions import db
 from models import User, OS
 
 app = Flask(__name__)
-app.config.from_object(Config)
+app.secret_key = "SISTEMA-OS-2026"
+
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 db.init_app(app)
 
 
-# -------------------
-# INIT DB
-# -------------------
+# ---------------- INIT ----------------
 with app.app_context():
     db.create_all()
 
-    admin = User.query.filter_by(username="admin").first()
-    if not admin:
+    if not User.query.filter_by(username="admin").first():
         db.session.add(User(
             username="admin",
-            password=generate_password_hash("Ponto2026"),
+            password=generate_password_hash("1234"),
             role="admin"
         ))
         db.session.commit()
 
 
-# -------------------
-# HELPERS
-# -------------------
-def login_ok():
-    return "user" in session
+# ---------------- HELPERS ----------------
+def login_required():
+    return session.get("user")
+
+
+def is_admin():
+    return session.get("role") == "admin"
+
+
+def parse_date(v):
+    try:
+        return datetime.strptime(v, "%Y-%m-%d").date() if v else None
+    except:
+        return None
 
 
 STATUS_FLOW = ["CRIADA", "VISTORIA", "LIBERADA", "REPARO", "FINALIZADA"]
 
 
-# -------------------
-# LOGIN
-# -------------------
+# ---------------- LOGIN ----------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        user = User.query.filter_by(username=request.form["username"]).first()
 
-        if user and check_password_hash(user.password, request.form["password"]):
+        username = request.form.get("username")
+        password = request.form.get("password")
+
+        user = User.query.filter_by(username=username).first()
+
+        if user and check_password_hash(user.password, password):
             session["user"] = user.username
             session["role"] = user.role
             return redirect("/")
@@ -54,32 +66,62 @@ def login():
     return render_template("login.html")
 
 
-# -------------------
-# LOGOUT
-# -------------------
 @app.route("/logout")
 def logout():
     session.clear()
     return redirect("/login")
 
 
-# -------------------
-# DASHBOARD
-# -------------------
+# ---------------- DASHBOARD ----------------
 @app.route("/")
 def dashboard():
-    if not login_ok():
+    if not login_required():
         return redirect("/login")
 
-    return render_template("dashboard.html", total=OS.query.count())
+    return render_template("dashboard.html")
 
 
-# -------------------
-# NOVA OS
-# -------------------
+# ---------------- USUÁRIOS ----------------
+@app.route("/usuarios")
+def usuarios():
+    if not login_required() or not is_admin():
+        return "Acesso negado"
+
+    return render_template("usuarios.html", usuarios=User.query.all())
+
+
+@app.route("/usuarios/novo", methods=["GET", "POST"])
+def novo_usuario():
+    if not login_required() or not is_admin():
+        return "Acesso negado"
+
+    if request.method == "POST":
+
+        username = request.form.get("username")
+        password = request.form.get("password")
+        role = request.form.get("role", "user")
+
+        if User.query.filter_by(username=username).first():
+            return "Usuário já existe"
+
+        novo = User(
+            username=username,
+            password=generate_password_hash(password),
+            role=role
+        )
+
+        db.session.add(novo)
+        db.session.commit()
+
+        return redirect("/usuarios")
+
+    return render_template("novo_usuario.html")
+
+
+# ---------------- NOVA OS ----------------
 @app.route("/nova_os", methods=["GET", "POST"])
 def nova_os():
-    if not login_ok():
+    if not login_required():
         return redirect("/login")
 
     if request.method == "POST":
@@ -89,8 +131,19 @@ def nova_os():
             cliente=request.form["cliente"],
             placa=request.form["placa"],
             seguradora=request.form["seguradora"],
-            criado_por=session["user"],
-            status="CRIADA"
+
+            data_entrada=parse_date(request.form.get("data_entrada")),
+            data_vistoria=parse_date(request.form.get("data_vistoria")),
+            data_liberacao_vistoria=parse_date(request.form.get("data_liberacao_vistoria")),
+            data_inicio_reparo=parse_date(request.form.get("data_inicio_reparo")),
+            previsao_entrega=parse_date(request.form.get("previsao_entrega")),
+            data_pagamento=parse_date(request.form.get("data_pagamento")),
+
+            valor_pecas=float(request.form.get("valor_pecas") or 0),
+            valor_mao_obra=float(request.form.get("valor_mao_obra") or 0),
+
+            status="CRIADA",
+            criado_por=session["user"]
         )
 
         db.session.add(os_item)
@@ -101,76 +154,34 @@ def nova_os():
     return render_template("nova_os.html")
 
 
-# -------------------
-# LISTAR OS
-# -------------------
+# ---------------- LISTAR OS ----------------
 @app.route("/listar_os")
 def listar_os():
-    if not login_ok():
+    if not login_required():
         return redirect("/login")
 
-    os_list = OS.query.order_by(OS.id.desc()).all()
-    return render_template("listar_os.html", os_list=os_list)
+    return render_template("listar_os.html", os_list=OS.query.all())
 
 
-# -------------------
-# EDITAR OS
-# -------------------
-@app.route("/editar_os/<int:id>", methods=["GET", "POST"])
-def editar_os(id):
-    if not login_ok():
+# ---------------- STATUS FLOW ----------------
+@app.route("/avancar/<int:id>")
+def avancar(id):
+    if not login_required():
         return redirect("/login")
 
     os_item = OS.query.get_or_404(id)
 
-    if request.method == "POST":
-        os_item.numero_os = request.form["numero_os"]
-        os_item.cliente = request.form["cliente"]
-        os_item.placa = request.form["placa"]
-        os_item.seguradora = request.form["seguradora"]
-
-        db.session.commit()
-        return redirect("/listar_os")
-
-    return render_template("editar_os.html", os=os_item)
-
-
-# -------------------
-# EXCLUIR OS
-# -------------------
-@app.route("/excluir_os/<int:id>")
-def excluir_os(id):
-    if not login_ok():
-        return redirect("/login")
-
-    os_item = OS.query.get_or_404(id)
-    db.session.delete(os_item)
-    db.session.commit()
-
-    return redirect("/listar_os")
-
-
-# -------------------
-# STATUS FLOW
-# -------------------
-@app.route("/avancar_status/<int:id>")
-def avancar_status(id):
-    if not login_ok():
-        return redirect("/login")
-
-    os_item = OS.query.get_or_404(id)
-
-    if os_item.status in STATUS_FLOW:
+    try:
         i = STATUS_FLOW.index(os_item.status)
         if i < len(STATUS_FLOW) - 1:
             os_item.status = STATUS_FLOW[i + 1]
+    except:
+        os_item.status = "CRIADA"
 
     db.session.commit()
     return redirect("/listar_os")
 
 
-# -------------------
-# RUN
-# -------------------
+# ---------------- RUN ----------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(debug=True)
