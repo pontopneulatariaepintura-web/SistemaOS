@@ -29,7 +29,7 @@ with app.app_context():
 
 # ---------------- HELPERS ----------------
 def login_required():
-    return session.get("user")
+    return session.get("user") is not None
 
 
 def is_admin():
@@ -51,12 +51,9 @@ STATUS_FLOW = ["CRIADA", "VISTORIA", "LIBERADA", "REPARO", "FINALIZADA"]
 def login():
     if request.method == "POST":
 
-        username = request.form.get("username")
-        password = request.form.get("password")
+        user = User.query.filter_by(username=request.form["username"]).first()
 
-        user = User.query.filter_by(username=username).first()
-
-        if user and check_password_hash(user.password, password):
+        if user and check_password_hash(user.password, request.form["password"]):
             session["user"] = user.username
             session["role"] = user.role
             return redirect("/")
@@ -78,7 +75,9 @@ def dashboard():
     if not login_required():
         return redirect("/login")
 
-    return render_template("dashboard.html")
+    total = OS.query.count()
+
+    return render_template("dashboard.html", total=total)
 
 
 # ---------------- USUÁRIOS ----------------
@@ -97,20 +96,15 @@ def novo_usuario():
 
     if request.method == "POST":
 
-        username = request.form.get("username")
-        password = request.form.get("password")
-        role = request.form.get("role", "user")
-
-        if User.query.filter_by(username=username).first():
+        if User.query.filter_by(username=request.form["username"]).first():
             return "Usuário já existe"
 
-        novo = User(
-            username=username,
-            password=generate_password_hash(password),
-            role=role
-        )
+        db.session.add(User(
+            username=request.form["username"],
+            password=generate_password_hash(request.form["password"]),
+            role=request.form.get("role", "user")
+        ))
 
-        db.session.add(novo)
         db.session.commit()
 
         return redirect("/usuarios")
@@ -163,25 +157,29 @@ def listar_os():
     return render_template("listar_os.html", os_list=OS.query.all())
 
 
-# ---------------- STATUS FLOW ----------------
+# ---------------- AVANÇAR STATUS (CORRIGIDO) ----------------
 @app.route("/avancar/<int:id>")
 def avancar(id):
+
     if not login_required():
         return redirect("/login")
 
     os_item = OS.query.get_or_404(id)
 
-    try:
+    STATUS_FLOW = ["CRIADA", "VISTORIA", "LIBERADA", "REPARO", "FINALIZADA"]
+
+    if os_item.status not in STATUS_FLOW:
+        os_item.status = "CRIADA"
+    else:
         i = STATUS_FLOW.index(os_item.status)
         if i < len(STATUS_FLOW) - 1:
             os_item.status = STATUS_FLOW[i + 1]
-    except:
-        os_item.status = "CRIADA"
 
     db.session.commit()
+
     return redirect("/listar_os")
 
 
 # ---------------- RUN ----------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=5000, debug=False)
