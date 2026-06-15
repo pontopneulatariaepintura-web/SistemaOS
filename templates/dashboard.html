@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard OS</title>
+    <style>
+        body {
+            font-family: Arial;
+            background: #f2f2f2;
+            margin: 0;
+            padding: 0;
+        }
+
+        .topbar {
+            background: #222;
+            color: white;
+            padding: 15px;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.1);
+        }
+
+        a {
+            text-decoration: none;
+            color: white;
+            background: #007BFF;
+            padding: 8px 12px;
+            border-radius: 5px;
+            margin-right: 10px;
+        }
+
+        a.logout {
+            background: red;
+        }
+    </style>
+</head>
+
+<body>
+    {% if session['role'] == 'admin' %}
+    <a href="/usuarios" style="padding:10px; background:#2a5298; color:white; border-radius:6px; text-decoration:none;">
+        👤 Gerenciar Usuários
+    </a>
+{% endif %}
+
+<div class="topbar">
+    <h2>Sistema OS - Dashboard</h2>
+
+    <a href="/nova_os">Nova OS</a>
+    <a href="/listar_os">Listar OS</a>
+    <a class="logout" href="/logout">Sair</a>
+</div>
+
+<div class="container">
+
+    <div class="card">
+        <h3>Bem-vindo ao sistema</h3>
+        <p>Gerenciamento de Ordem de Serviço ativo.</p>
+    </div>
+
+</div>
+
+</body>
+</html>

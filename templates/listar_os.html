@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Ordens de Serviço</title>
+
+<style>
+body {
+    font-family: Arial;
+    background: #eef1f5;
+    margin: 0;
+}
+
+.topo {
+    background: #111827;
+    color: white;
+    padding: 15px;
+}
+
+.container {
+    padding: 20px;
+}
+
+.card {
+    background: white;
+    padding: 15px;
+    margin-bottom: 15px;
+    border-radius: 10px;
+    box-shadow: 0 0 8px rgba(0,0,0,0.08);
+}
+
+.linha { margin: 4px 0; }
+
+.btn {
+    display: inline-block;
+    padding: 6px 10px;
+    margin: 3px;
+    border-radius: 6px;
+    color: white;
+    text-decoration: none;
+    font-size: 13px;
+}
+
+.azul { background: #2563eb; }
+.verde { background: #16a34a; }
+.roxo { background: #7c3aed; }
+.vermelho { background: #dc2626; }
+.cinza { background: #6b7280; }
+.laranja { background: #f59e0b; }
+
+.status {
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.CRIADA { background: #f59e0b; color: white; }
+.VISTORIA { background: #2563eb; color: white; }
+.LIBERADA { background: #7c3aed; color: white; }
+.REPARO { background: #dc2626; color: white; }
+.FINALIZADA { background: #16a34a; color: white; }
+
+small {
+    color: gray;
+}
+</style>
+</head>
+
+<body>
+
+<div class="topo">
+    <h2>📋 Sistema de Ordens de Serviço</h2>
+    <a href="/" style="color:white;">Dashboard</a> |
+    <a href="/nova_os" style="color:white;">Nova OS</a> |
+    <a href="/usuarios" style="color:white;">Usuários</a>
+</div>
+
+<div class="container">
+
+{% for os in os_list %}
+
+<div class="card">
+
+    <h3>OS #{{ os.numero_os }}</h3>
+
+    <span class="status {{ os.status }}">{{ os.status }}</span>
+
+    <p><small>Criado por: {{ os.criado_por }}</small></p>
+
+    <div class="linha"><b>Cliente:</b> {{ os.cliente }}</div>
+    <div class="linha"><b>Placa:</b> {{ os.placa }}</div>
+    <div class="linha"><b>Seguradora:</b> {{ os.seguradora }}</div>
+
+    <hr>
+
+    <div class="linha"><b>Entrada:</b> {{ os.data_entrada }}</div>
+    <div class="linha"><b>Vistoria:</b> {{ os.data_vistoria }}</div>
+    <div class="linha"><b>Liberação:</b> {{ os.data_liberacao_vistoria }}</div>
+    <div class="linha"><b>Reparo:</b> {{ os.data_inicio_reparo }}</div>
+    <div class="linha"><b>Previsão:</b> {{ os.previsao_entrega }}</div>
+    <div class="linha"><b>Pagamento:</b> {{ os.data_pagamento }}</div>
+
+    <hr>
+
+    <!-- FLUXO PROFISSIONAL -->
+    <a class="btn laranja" href="/avancar_status/{{ os.id }}">
+        ➜ Próxima etapa
+    </a>
+
+    <a class="btn azul" href="/editar_os/{{ os.id }}">
+        ✏ Editar
+    </a>
+
+    <a class="btn vermelho" href="/excluir_os/{{ os.id }}">
+        🗑 Excluir
+    </a>
+
+</div>
+
+{% endfor %}
+
+</div>
+
+</body>
+</html>

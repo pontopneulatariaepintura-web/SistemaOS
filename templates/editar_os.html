@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h2>Editar OS</h2>
+
+<form method="POST" class="card p-4 shadow-sm">
+
+    <input class="form-control mb-2" name="cliente" value="{{ os.cliente }}">
+    <input class="form-control mb-2" name="veiculo" value="{{ os.veiculo }}">
+    <input class="form-control mb-2" name="placa" value="{{ os.placa }}">
+
+    <textarea class="form-control mb-2" name="servico">{{ os.servico }}</textarea>
+
+    <input class="form-control mb-2" name="valor" value="{{ os.valor }}">
+
+    <select class="form-control mb-3" name="status">
+        <option {% if os.status=="Aberta" %}selected{% endif %}>Aberta</option>
+        <option {% if os.status=="Em andamento" %}selected{% endif %}>Em andamento</option>
+        <option {% if os.status=="Finalizada" %}selected{% endif %}>Finalizada</option>
+    </select>
+
+    <button class="btn btn-success">Salvar Alterações</button>
+
+</form>
+
+{% endblock %}

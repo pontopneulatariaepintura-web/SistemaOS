@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Novo Usuário</title>
+</head>
+<body style="font-family: Arial; background:#f4f6f9; padding:20px;">
+
+<h2>➕ Criar Usuário</h2>
+
+<form method="POST" style="background:white; padding:20px; width:300px; border-radius:10px;">
+
+    <label>Usuário</label><br>
+    <input name="username" required style="width:100%; padding:8px;">
+    <br><br>
+
+    <label>Senha</label><br>
+    <input name="password" type="password" required style="width:100%; padding:8px;">
+    <br><br>
+
+    <label>Tipo</label><br>
+    <select name="role" style="width:100%; padding:8px;">
+        <option value="user">Usuário</option>
+        <option value="admin">Admin</option>
+    </select>
+
+    <br><br>
+
+    <button type="submit"
+        style="width:100%; padding:10px; background:#2a5298; color:white; border:none;">
+        Criar Usuário
+    </button>
+
+</form>
+
+<br>
+<a href="/usuarios">⬅ Voltar</a>
+
+</body>
+</html>

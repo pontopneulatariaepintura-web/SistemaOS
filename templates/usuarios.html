@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Usuários</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f6f9;
+            padding: 20px;
+        }
+
+        h2 {
+            color: #2a5298;
+        }
+
+        a.btn {
+            padding: 10px;
+            background: #2a5298;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+        }
+
+        table {
+            width: 100%;
+            background: white;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+        }
+
+        th {
+            background: #2a5298;
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+
+<h2>👤 Gerenciamento de Usuários</h2>
+
+<a class="btn" href="/usuarios/novo">+ Novo Usuário</a>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Usuário</th>
+        <th>Tipo</th>
+    </tr>
+
+    {% for u in usuarios %}
+    <tr>
+        <td>{{ u.id }}</td>
+        <td>{{ u.username }}</td>
+        <td>{{ u.role }}</td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>

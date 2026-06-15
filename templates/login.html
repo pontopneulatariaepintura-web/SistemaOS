@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Login - Sistema OS</title>
+
+<style>
+body {
+    margin: 0;
+    font-family: Arial;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* CARD LOGIN */
+.login-box {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    width: 320px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    text-align: center;
+}
+
+/* TITULO */
+.login-box h2 {
+    margin-bottom: 20px;
+    color: #2a5298;
+}
+
+/* INPUTS */
+.login-box input {
+    width: 100%;
+    padding: 12px;
+    margin: 8px 0;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    outline: none;
+}
+
+.login-box input:focus {
+    border-color: #2a5298;
+}
+
+/* BOTÃO */
+.login-box button {
+    width: 100%;
+    padding: 12px;
+    background: #2a5298;
+    border: none;
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    margin-top: 10px;
+}
+
+.login-box button:hover {
+    background: #1e3c72;
+}
+
+/* TEXTO EXTRA */
+.footer {
+    margin-top: 15px;
+    font-size: 12px;
+    color: #666;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="login-box">
+
+    <h2>🔐 Sistema OS</h2>
+
+    <form method="POST">
+
+        <input type="text" name="username" placeholder="Usuário" required>
+
+        <input type="password" name="password" placeholder="Senha" required>
+
+        <button type="submit">Entrar</button>
+
+    </form>
+
+    <div class="footer">
+        Ponto Pneu Lataria & Pintura
+    </div>
+
+</div>
+
+</body>
+</html>

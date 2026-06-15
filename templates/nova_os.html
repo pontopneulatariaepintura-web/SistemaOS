@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Nova OS</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #f4f4f4;
+            margin: 0;
+        }
+
+        .topo {
+            background: #007bff;
+            color: white;
+            padding: 15px;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 6px rgba(0,0,0,0.1);
+            max-width: 700px;
+            margin: auto;
+        }
+
+        input {
+            width: 100%;
+            padding: 8px;
+            margin: 6px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+
+        label {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .btn {
+            background: #28a745;
+            color: white;
+            padding: 10px;
+            border: none;
+            border-radius: 5px;
+            width: 100%;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            background: #218838;
+        }
+
+        .voltar {
+            display: inline-block;
+            margin-top: 10px;
+            background: #6c757d;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+        }
+
+        h2 {
+            color: #000000;
+        }
+
+        .secao {
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #eee;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="topo">
+    <h2>➕ Criar Nova Ordem de Serviço</h2>
+</div>
+
+<div class="container">
+
+    <div class="card">
+
+        <form method="POST">
+
+            <div class="secao">
+                <label>Número da OS</label>
+                <input name="numero_os" required>
+            </div>
+
+            <div class="secao">
+                <label>Cliente</label>
+                <input name="cliente" required>
+
+                <label>Placa</label>
+                <input name="placa" required>
+
+                <label>Seguradora</label>
+                <input name="seguradora">
+            </div>
+
+            <div class="secao">
+                <label>Data de Entrada</label>
+                <input type="date" name="data_entrada">
+
+                <label>Data de Vistoria</label>
+                <input type="date" name="data_vistoria">
+
+                <label>Liberação da Vistoria</label>
+                <input type="date" name="data_liberacao_vistoria">
+
+                <label>Início dos Reparos</label>
+                <input type="date" name="data_inicio_reparo">
+
+                <label>Previsão de Entrega</label>
+                <input type="date" name="previsao_entrega">
+
+                <label>Data de Pagamento</label>
+                <input type="date" name="data_pagamento">
+            </div>
+
+            <div class="secao">
+                <label>Valor Peças</label>
+                <input name="valor_pecas">
+
+                <label>Valor Mão de Obra</label>
+                <input name="valor_mao_obra">
+            </div>
+
+            <button class="btn" type="submit">💾 Salvar OS</button>
+
+        </form>
+
+        <a class="voltar" href="/listar_os">⬅ Voltar</a>
+
+    </div>
+
+</div>
+
+</body>
+</html>
