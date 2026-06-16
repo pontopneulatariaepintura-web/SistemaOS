@@ -6,6 +6,8 @@ from extensions import db
 from models import User, OS
 
 app = Flask(__name__)
+
+# 🔐 SEGURANÇA
 app.secret_key = "SISTEMA-OS-2026"
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
@@ -14,10 +16,11 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db.init_app(app)
 
 
-# ---------------- INIT ----------------
+# ---------------- INIT BANCO ----------------
 with app.app_context():
     db.create_all()
 
+    # cria admin padrão
     if not User.query.filter_by(username="admin").first():
         db.session.add(User(
             username="admin",
@@ -28,17 +31,19 @@ with app.app_context():
 
 
 # ---------------- HELPERS ----------------
-def login_required():
-    return session.get("user")
+def logado():
+    return "user" in session
 
 
-def is_admin():
+def admin():
     return session.get("role") == "admin"
 
 
 def parse_date(v):
+    if not v:
+        return None
     try:
-        return datetime.strptime(v, "%Y-%m-%d").date() if v else None
+        return datetime.strptime(v, "%Y-%m-%d").date()
     except:
         return None
 
@@ -49,6 +54,7 @@ STATUS_FLOW = ["CRIADA", "VISTORIA", "LIBERADA", "REPARO", "FINALIZADA"]
 # ---------------- LOGIN ----------------
 @app.route("/login", methods=["GET", "POST"])
 def login():
+
     if request.method == "POST":
 
         user = User.query.filter_by(username=request.form["username"]).first()
@@ -72,17 +78,39 @@ def logout():
 # ---------------- DASHBOARD ----------------
 @app.route("/")
 def dashboard():
-    if not login_required():
+
+    if not logado():
         return redirect("/login")
 
-    total = OS.query.count()
-    return render_template("dashboard.html", total=total)
+    total_os = OS.query.count()
+
+    criadas = OS.query.filter_by(status="CRIADA").count()
+    vistoria = OS.query.filter_by(status="VISTORIA").count()
+    liberadas = OS.query.filter_by(status="LIBERADA").count()
+    reparo = OS.query.filter_by(status="REPARO").count()
+    finalizadas = OS.query.filter_by(status="FINALIZADA").count()
+
+    valor_pecas = sum(o.valor_pecas or 0 for o in OS.query.all())
+    valor_mao_obra = sum(o.valor_mao_obra or 0 for o in OS.query.all())
+
+    return render_template(
+        "dashboard.html",
+        total_os=total_os,
+        criadas=criadas,
+        vistoria=vistoria,
+        liberadas=liberadas,
+        reparo=reparo,
+        finalizadas=finalizadas,
+        valor_pecas=valor_pecas,
+        valor_mao_obra=valor_mao_obra
+    )
 
 
 # ---------------- USUÁRIOS ----------------
 @app.route("/usuarios")
 def usuarios():
-    if not login_required() or not is_admin():
+
+    if not logado() or not admin():
         return "Acesso negado"
 
     return render_template("usuarios.html", usuarios=User.query.all())
@@ -90,7 +118,8 @@ def usuarios():
 
 @app.route("/usuarios/novo", methods=["GET", "POST"])
 def novo_usuario():
-    if not login_required() or not is_admin():
+
+    if not logado() or not admin():
         return "Acesso negado"
 
     if request.method == "POST":
@@ -111,26 +140,11 @@ def novo_usuario():
     return render_template("novo_usuario.html")
 
 
-@app.route("/usuarios/excluir/<int:id>")
-def excluir_usuario(id):
-    if not login_required() or not is_admin():
-        return "Acesso negado"
-
-    user = User.query.get_or_404(id)
-
-    if user.username == "admin":
-        return "Não pode excluir admin"
-
-    db.session.delete(user)
-    db.session.commit()
-
-    return redirect("/usuarios")
-
-
 # ---------------- NOVA OS ----------------
 @app.route("/nova_os", methods=["GET", "POST"])
 def nova_os():
-    if not login_required():
+
+    if not logado():
         return redirect("/login")
 
     if request.method == "POST":
@@ -166,7 +180,8 @@ def nova_os():
 # ---------------- LISTAR OS ----------------
 @app.route("/listar_os")
 def listar_os():
-    if not login_required():
+
+    if not logado():
         return redirect("/login")
 
     return render_template("listar_os.html", os_list=OS.query.all())
@@ -176,7 +191,7 @@ def listar_os():
 @app.route("/editar_os/<int:id>", methods=["GET", "POST"])
 def editar_os(id):
 
-    if not login_required():
+    if not logado():
         return redirect("/login")
 
     os_item = OS.query.get_or_404(id)
@@ -199,11 +214,26 @@ def editar_os(id):
     return render_template("editar_os.html", os=os_item)
 
 
+# ---------------- EXCLUIR OS ----------------
+@app.route("/excluir_os/<int:id>")
+def excluir_os(id):
+
+    if not logado():
+        return redirect("/login")
+
+    os_item = OS.query.get_or_404(id)
+
+    db.session.delete(os_item)
+    db.session.commit()
+
+    return redirect("/listar_os")
+
+
 # ---------------- AVANÇAR STATUS ----------------
 @app.route("/avancar/<int:id>")
 def avancar(id):
 
-    if not login_required():
+    if not logado():
         return redirect("/login")
 
     os_item = OS.query.get_or_404(id)
@@ -215,19 +245,6 @@ def avancar(id):
         if i < len(STATUS_FLOW) - 1:
             os_item.status = STATUS_FLOW[i + 1]
 
-    db.session.commit()
-
-    return redirect("/listar_os")
-
-@app.route("/excluir_os/<int:id>")
-def excluir_os(id):
-
-    if not login_required():
-        return redirect("/login")
-
-    os_item = OS.query.get_or_404(id)
-
-    db.session.delete(os_item)
     db.session.commit()
 
     return redirect("/listar_os")
