@@ -29,7 +29,7 @@ with app.app_context():
 
 # ---------------- HELPERS ----------------
 def login_required():
-    return session.get("user") is not None
+    return session.get("user")
 
 
 def is_admin():
@@ -76,7 +76,6 @@ def dashboard():
         return redirect("/login")
 
     total = OS.query.count()
-
     return render_template("dashboard.html", total=total)
 
 
@@ -110,6 +109,22 @@ def novo_usuario():
         return redirect("/usuarios")
 
     return render_template("novo_usuario.html")
+
+
+@app.route("/usuarios/excluir/<int:id>")
+def excluir_usuario(id):
+    if not login_required() or not is_admin():
+        return "Acesso negado"
+
+    user = User.query.get_or_404(id)
+
+    if user.username == "admin":
+        return "Não pode excluir admin"
+
+    db.session.delete(user)
+    db.session.commit()
+
+    return redirect("/usuarios")
 
 
 # ---------------- NOVA OS ----------------
@@ -157,7 +172,34 @@ def listar_os():
     return render_template("listar_os.html", os_list=OS.query.all())
 
 
-# ---------------- AVANÇAR STATUS (CORRIGIDO) ----------------
+# ---------------- EDITAR OS ----------------
+@app.route("/editar_os/<int:id>", methods=["GET", "POST"])
+def editar_os(id):
+
+    if not login_required():
+        return redirect("/login")
+
+    os_item = OS.query.get_or_404(id)
+
+    if request.method == "POST":
+
+        os_item.cliente = request.form["cliente"]
+        os_item.placa = request.form["placa"]
+        os_item.seguradora = request.form["seguradora"]
+
+        os_item.valor_pecas = float(request.form.get("valor_pecas") or 0)
+        os_item.valor_mao_obra = float(request.form.get("valor_mao_obra") or 0)
+
+        os_item.status = request.form["status"]
+
+        db.session.commit()
+
+        return redirect("/listar_os")
+
+    return render_template("editar_os.html", os=os_item)
+
+
+# ---------------- AVANÇAR STATUS ----------------
 @app.route("/avancar/<int:id>")
 def avancar(id):
 
@@ -165,8 +207,6 @@ def avancar(id):
         return redirect("/login")
 
     os_item = OS.query.get_or_404(id)
-
-    STATUS_FLOW = ["CRIADA", "VISTORIA", "LIBERADA", "REPARO", "FINALIZADA"]
 
     if os_item.status not in STATUS_FLOW:
         os_item.status = "CRIADA"
@@ -182,4 +222,4 @@ def avancar(id):
 
 # ---------------- RUN ----------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=False)
+    app.run(debug=True)

@@ -11,16 +11,25 @@ body {
     margin: 0;
 }
 
+/* TOPO */
 .topo {
     background: #111827;
     color: white;
     padding: 15px;
 }
 
+.topo a {
+    color: white;
+    margin-right: 10px;
+    text-decoration: none;
+}
+
+/* CONTAINER */
 .container {
     padding: 20px;
 }
 
+/* CARD */
 .card {
     background: white;
     padding: 15px;
@@ -29,37 +38,44 @@ body {
     box-shadow: 0 0 8px rgba(0,0,0,0.08);
 }
 
-.linha { margin: 4px 0; }
+/* LINHAS */
+.linha {
+    margin: 4px 0;
+}
 
+/* BOTÕES */
 .btn {
     display: inline-block;
-    padding: 6px 10px;
-    margin: 3px;
+    padding: 8px 12px;
+    margin: 5px 3px;
     border-radius: 6px;
     color: white;
     text-decoration: none;
     font-size: 13px;
+    font-weight: bold;
 }
 
 .azul { background: #2563eb; }
 .verde { background: #16a34a; }
-.roxo { background: #7c3aed; }
 .vermelho { background: #dc2626; }
+.roxo { background: #7c3aed; }
 .cinza { background: #6b7280; }
-.laranja { background: #f59e0b; }
 
+/* STATUS */
 .status {
     padding: 5px 10px;
     border-radius: 6px;
     font-weight: bold;
     display: inline-block;
+    margin-bottom: 10px;
+    color: white;
 }
 
-.CRIADA { background: #f59e0b; color: white; }
-.VISTORIA { background: #2563eb; color: white; }
-.LIBERADA { background: #7c3aed; color: white; }
-.REPARO { background: #dc2626; color: white; }
-.FINALIZADA { background: #16a34a; color: white; }
+.CRIADA { background: #f59e0b; }
+.VISTORIA { background: #2563eb; }
+.LIBERADA { background: #7c3aed; }
+.REPARO { background: #dc2626; }
+.FINALIZADA { background: #16a34a; }
 
 small {
     color: gray;
@@ -71,9 +87,9 @@ small {
 
 <div class="topo">
     <h2>📋 Sistema de Ordens de Serviço</h2>
-    <a href="/" style="color:white;">Dashboard</a> |
-    <a href="/nova_os" style="color:white;">Nova OS</a> |
-    <a href="/usuarios" style="color:white;">Usuários</a>
+    <a href="/">Dashboard</a>
+    <a href="/nova_os">Nova OS</a>
+    <a href="/usuarios">Usuários</a>
 </div>
 
 <div class="container">
@@ -84,8 +100,10 @@ small {
 
     <h3>OS #{{ os.numero_os }}</h3>
 
+    <!-- STATUS -->
     <span class="status {{ os.status }}">{{ os.status }}</span>
 
+    <!-- CRIADOR -->
     <p><small>Criado por: {{ os.criado_por }}</small></p>
 
     <div class="linha"><b>Cliente:</b> {{ os.cliente }}</div>
@@ -103,16 +121,19 @@ small {
 
     <hr>
 
-    <!-- FLUXO PROFISSIONAL -->
-   <a class="btn btn-acao" href="/avancar/{{ os.id }}">
-    Avançar etapa
-    </a>
+    <!-- BOTÕES FUNCIONAIS -->
+
+    <!-- avançar status -->
+    <a class="btn verde" href="/avancar/{{ os.id }}">
+        🚀 Avançar Etapa
     </a>
 
+    <!-- editar OS -->
     <a class="btn azul" href="/editar_os/{{ os.id }}">
         ✏ Editar
     </a>
 
+    <!-- excluir OS -->
     <a class="btn vermelho" href="/excluir_os/{{ os.id }}">
         🗑 Excluir
     </a>
