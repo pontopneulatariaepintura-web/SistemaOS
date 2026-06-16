@@ -219,6 +219,19 @@ def avancar(id):
 
     return redirect("/listar_os")
 
+@app.route("/excluir_os/<int:id>")
+def excluir_os(id):
+
+    if not login_required():
+        return redirect("/login")
+
+    os_item = OS.query.get_or_404(id)
+
+    db.session.delete(os_item)
+    db.session.commit()
+
+    return redirect("/listar_os")
+
 
 # ---------------- RUN ----------------
 if __name__ == "__main__":
