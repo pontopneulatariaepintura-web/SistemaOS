@@ -1,39 +1,77 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
+
 <head>
+    <meta charset="UTF-8">
     <title>Novo Usuário</title>
+
+    <style>
+        body {
+            font-family: Arial;
+            background: #eef2f7;
+            margin: 0;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 60px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        button {
+            width: 100%;
+            padding: 10px;
+            background: #28a745;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        a {
+            display: block;
+            text-align: center;
+            margin-top: 10px;
+            color: #333;
+            text-decoration: none;
+        }
+    </style>
 </head>
-<body style="font-family: Arial; background:#f4f6f9; padding:20px;">
 
-<h2>➕ Criar Usuário</h2>
+<body>
 
-<form method="POST" style="background:white; padding:20px; width:300px; border-radius:10px;">
+<div class="container">
 
-    <label>Usuário</label><br>
-    <input name="username" required style="width:100%; padding:8px;">
-    <br><br>
+    <h2>Novo Usuário</h2>
 
-    <label>Senha</label><br>
-    <input name="password" type="password" required style="width:100%; padding:8px;">
-    <br><br>
+    <form method="POST">
 
-    <label>Tipo</label><br>
-    <select name="role" style="width:100%; padding:8px;">
-        <option value="user">Usuário</option>
-        <option value="admin">Admin</option>
-    </select>
+        <label>Nome</label>
+        <input type="text" name="nome" required>
 
-    <br><br>
+        <label>Usuário</label>
+        <input type="text" name="usuario" required>
 
-    <button type="submit"
-        style="width:100%; padding:10px; background:#2a5298; color:white; border:none;">
-        Criar Usuário
-    </button>
+        <label>Senha</label>
+        <input type="password" name="senha" required>
 
-</form>
+        <button type="submit">Salvar</button>
+    </form>
 
-<br>
-<a href="/usuarios">⬅ Voltar</a>
+    <a href="{{ url_for('usuarios') }}">Voltar</a>
+
+</div>
 
 </body>
 </html>

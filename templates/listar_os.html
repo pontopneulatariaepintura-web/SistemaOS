@@ -224,7 +224,11 @@ small{
             </a>
 
             <a href="/listar_os">
-                Ordens de Serviço
+               Ordens de Serviço
+            </a>
+
+            <a href="/logout">
+                Sair
             </a>
 
         </div>
@@ -296,8 +300,20 @@ small{
     </div>
 
     <div class="linha">
-        <b>Pagamento:</b> {{ os.data_pagamento }}
+         <b>Peças:</b>
+         R$ {{ "%.2f"|format(os.valor_pecas or 0) }}
     </div>
+
+    <div class="linha">
+         <b>Mão de obra:</b>
+          R$ {{ "%.2f"|format(os.valor_mao_obra or 0) }}
+    </div>
+
+    <div class="linha">
+       <b>Total:</b>
+        R$ {{ "%.2f"|format((os.valor_pecas or 0) + (os.valor_mao_obra or 0)) }}
+    </div>
+    
 
     <hr style="margin:10px 0;">
 
@@ -312,13 +328,15 @@ small{
            href="/editar_os/{{ os.id }}">
             ✏️ Editar
         </a>
-
+        
+        {% if session.get('role') == 'admin' %}
         <a class="btn vermelho"
-           href="/excluir_os/{{ os.id }}"
-           onclick="return confirm('Deseja excluir esta OS?')">
-            🗑 Excluir
+            href="/excluir_os/{{ os.id }}"
+            onclick="return confirm('Deseja excluir esta OS?')">
+             🗑 Excluir
         </a>
-
+          {% endif %}
+      
     </div>
 
 </div>

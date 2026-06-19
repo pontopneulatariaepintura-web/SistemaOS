@@ -34,3 +34,15 @@ class OS(db.Model):
     valor_mao_obra = db.Column(db.Float, default=0)
 
     criado_por = db.Column(db.String(80))
+
+    # NOVOS CAMPOS
+    data_criacao = db.Column(
+        db.DateTime,
+        default=datetime.utcnow
+    )
+
+    ultima_atualizacao = db.Column(
+        db.DateTime,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow
+    )

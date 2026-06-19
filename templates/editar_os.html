@@ -1,29 +1,152 @@
-{% extends "base.html" %}
+<!-- editar_os.html -->
+<!DOCTYPE html>
+<html lang="pt-br">
 
-{% block content %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editar Ordem de Serviço</title>
 
-<h2>Editar OS</h2>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, Helvetica, sans-serif;
+        }
 
-<form method="POST">
+        body {
+            background: #eef2f7;
+        }
 
-<input name="cliente" value="{{ os.cliente }}" class="form-control"><br>
-<input name="placa" value="{{ os.placa }}" class="form-control"><br>
-<input name="seguradora" value="{{ os.seguradora }}" class="form-control"><br>
+        .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
 
-<input name="valor_pecas" value="{{ os.valor_pecas }}" class="form-control"><br>
-<input name="valor_mao_obra" value="{{ os.valor_mao_obra }}" class="form-control"><br>
+        h2 {
+            margin-bottom: 20px;
+            color: #111;
+        }
 
-<select name="status" class="form-control">
-    <option>CRIADA</option>
-    <option>VISTORIA</option>
-    <option>LIBERADA</option>
-    <option>REPARO</option>
-    <option>FINALIZADA</option>
-</select><br>
+        form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
 
-<button class="btn btn-success">Salvar</button>
-<a href="/listar_os" class="btn btn-secondary">Voltar</a>
+        label {
+            font-size: 14px;
+            color: #333;
+        }
 
-</form>
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            outline: none;
+        }
 
-{% endblock %}
+        textarea {
+            grid-column: span 2;
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .full {
+            grid-column: span 2;
+        }
+
+        .btn {
+            grid-column: span 2;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .btn button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .salvar {
+            background: #28a745;
+            color: #fff;
+        }
+
+        .voltar {
+            background: #6c757d;
+            color: #fff;
+            text-decoration: none;
+            display: inline-block;
+            padding: 10px 20px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <h2>Editar Ordem de Serviço</h2>
+
+        <form method="POST">
+            
+            <div>
+                <label>Cliente</label>
+                <input type="text" name="cliente" value="{{ os.cliente }}" required>
+            </div>
+
+            <div>
+                <label>Telefone</label>
+                <input type="text" name="telefone" value="{{ os.telefone }}">
+            </div>
+
+            <div>
+                <label>Veículo</label>
+                <input type="text" name="veiculo" value="{{ os.veiculo }}" required>
+            </div>
+
+            <div>
+                <label>Placa</label>
+                <input type="text" name="placa" value="{{ os.placa }}">
+            </div>
+
+            <div>
+                <label>Serviço</label>
+                <input type="text" name="servico" value="{{ os.servico }}" required>
+            </div>
+
+            <div>
+                <label>Status</label>
+                <select name="status">
+                    <option value="Aberto" {% if os.status == "Aberto" %}selected{% endif %}>Aberto</option>
+                    <option value="Em andamento" {% if os.status == "Em andamento" %}selected{% endif %}>Em andamento</option>
+                    <option value="Finalizado" {% if os.status == "Finalizado" %}selected{% endif %}>Finalizado</option>
+                </select>
+            </div>
+
+            <div class="full">
+                <label>Observações</label>
+                <textarea name="observacoes">{{ os.observacoes }}</textarea>
+            </div>
+
+            <div class="btn">
+                <a href="{{ url_for('index') }}" class="voltar">Voltar</a>
+                <button type="submit" class="salvar">Salvar Alterações</button>
+            </div>
+
+        </form>
+    </div>
+
+</body>
+</html>

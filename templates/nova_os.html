@@ -1,150 +1,136 @@
 <!DOCTYPE html>
 <html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
-    <title>Nova OS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nova Ordem de Serviço</title>
 
     <style>
         body {
-            font-family: Arial;
-            background: #f4f4f4;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #eef2f7;
             margin: 0;
         }
 
-        .topo {
-            background: #007bff;
-            color: white;
-            padding: 15px;
-        }
-
         .container {
+            max-width: 900px;
+            margin: 40px auto;
+            background: #fff;
             padding: 20px;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 6px rgba(0,0,0,0.1);
-            max-width: 700px;
-            margin: auto;
-        }
-
-        input {
-            width: 100%;
-            padding: 8px;
-            margin: 6px 0;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        label {
-            font-weight: bold;
-            color: #333;
-        }
-
-        .btn {
-            background: #28a745;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 5px;
-            width: 100%;
-            cursor: pointer;
-            font-size: 16px;
-            margin-top: 10px;
-        }
-
-        .btn:hover {
-            background: #218838;
-        }
-
-        .voltar {
-            display: inline-block;
-            margin-top: 10px;
-            background: #6c757d;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 5px;
-            text-decoration: none;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
         }
 
         h2 {
-            color: #000000;
+            margin-bottom: 20px;
         }
 
-        .secao {
-            margin-bottom: 15px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
+        form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        label {
+            font-size: 14px;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+        }
+
+        textarea {
+            grid-column: span 2;
+            min-height: 120px;
+        }
+
+        .full {
+            grid-column: span 2;
+        }
+
+        .btns {
+            grid-column: span 2;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .salvar {
+            background: #28a745;
+            color: #fff;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .voltar {
+            background: #6c757d;
+            color: #fff;
+            padding: 10px 20px;
+            border-radius: 6px;
+            text-decoration: none;
         }
     </style>
 </head>
 
 <body>
 
-<div class="topo">
-    <h2>➕ Criar Nova Ordem de Serviço</h2>
-</div>
-
 <div class="container">
+    <h2>Nova Ordem de Serviço</h2>
 
-    <div class="card">
+    <form method="POST">
 
-        <form method="POST">
+        <div>
+            <label>Cliente</label>
+            <input type="text" name="cliente" required>
+        </div>
 
-            <div class="secao">
-                <label>Número da OS</label>
-                <input name="numero_os" required>
-            </div>
+        <div>
+            <label>Telefone</label>
+            <input type="text" name="telefone">
+        </div>
 
-            <div class="secao">
-                <label>Cliente</label>
-                <input name="cliente" required>
+        <div>
+            <label>Veículo</label>
+            <input type="text" name="veiculo" required>
+        </div>
 
-                <label>Placa</label>
-                <input name="placa" required>
+        <div>
+            <label>Placa</label>
+            <input type="text" name="placa">
+        </div>
 
-                <label>Seguradora</label>
-                <input name="seguradora">
-            </div>
+        <div>
+            <label>Serviço</label>
+            <input type="text" name="servico" required>
+        </div>
 
-            <div class="secao">
-                <label>Data de Entrada</label>
-                <input type="date" name="data_entrada">
+        <div>
+            <label>Status</label>
+            <select name="status">
+                <option value="Aberto">Aberto</option>
+                <option value="Em andamento">Em andamento</option>
+                <option value="Finalizado">Finalizado</option>
+            </select>
+        </div>
 
-                <label>Data de Vistoria</label>
-                <input type="date" name="data_vistoria">
+        <div class="full">
+            <label>Observações</label>
+            <textarea name="observacoes"></textarea>
+        </div>
 
-                <label>Liberação da Vistoria</label>
-                <input type="date" name="data_liberacao_vistoria">
+        <div class="btns">
+            <a href="{{ url_for('index') }}" class="voltar">Voltar</a>
+            <button class="salvar" type="submit">Salvar</button>
+        </div>
 
-                <label>Início dos Reparos</label>
-                <input type="date" name="data_inicio_reparo">
-
-                <label>Previsão de Entrega</label>
-                <input type="date" name="previsao_entrega">
-
-                <label>Data de Pagamento</label>
-                <input type="date" name="data_pagamento">
-            </div>
-
-            <div class="secao">
-                <label>Valor Peças</label>
-                <input name="valor_pecas">
-
-                <label>Valor Mão de Obra</label>
-                <input name="valor_mao_obra">
-            </div>
-
-            <button class="btn" type="submit">💾 Salvar OS</button>
-
-        </form>
-
-        <a class="voltar" href="/listar_os">⬅ Voltar</a>
-
-    </div>
-
+    </form>
 </div>
 
 </body>
