@@ -6,7 +6,7 @@ from flask import Flask, flash, redirect, render_template, request, session, url
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from extensions import db
-from models import EstoquePeca, OS, User
+from models import EstoqueParaBrisa, EstoquePeca, OS, User
 
 app = Flask(__name__)
 
@@ -158,6 +158,10 @@ def dashboard():
     total_itens_estoque = EstoquePeca.query.count()
     valor_estoque = sum((peca.quantidade or 0) * (peca.valor_unitario or 0) for peca in EstoquePeca.query.all())
     estoque_baixo = EstoquePeca.query.filter(EstoquePeca.quantidade <= EstoquePeca.estoque_minimo).count()
+    total_para_brisas = EstoqueParaBrisa.query.count()
+    para_brisas_baixo = EstoqueParaBrisa.query.filter(
+        EstoqueParaBrisa.quantidade <= EstoqueParaBrisa.estoque_minimo
+    ).count()
 
     return render_template(
         "dashboard.html",
@@ -172,6 +176,8 @@ def dashboard():
         total_itens_estoque=total_itens_estoque,
         valor_estoque=valor_estoque,
         estoque_baixo=estoque_baixo,
+        total_para_brisas=total_para_brisas,
+        para_brisas_baixo=para_brisas_baixo,
     )
 
 
@@ -385,6 +391,83 @@ def excluir_peca(id):
     db.session.commit()
     flash("Pe\u00e7a removida do estoque.", "success")
     return redirect(url_for("estoque"))
+
+
+@app.route("/para_brisas")
+@login_required
+def para_brisas():
+    itens = EstoqueParaBrisa.query.order_by(EstoqueParaBrisa.veiculo, EstoqueParaBrisa.modelo).all()
+    total_unidades = sum(item.quantidade or 0 for item in itens)
+    valor_total = sum((item.quantidade or 0) * (item.valor_unitario or 0) for item in itens)
+    return render_template(
+        "para_brisas.html",
+        itens=itens,
+        total_unidades=total_unidades,
+        valor_total=valor_total,
+    )
+
+
+@app.route("/para_brisas/novo", methods=["GET", "POST"])
+@login_required
+def novo_para_brisa():
+    if request.method == "POST":
+        item = EstoqueParaBrisa(
+            veiculo=request.form.get("veiculo", "").strip(),
+            modelo=request.form.get("modelo", "").strip(),
+            ano_inicial=int(request.form.get("ano_inicial") or 0) or None,
+            ano_final=int(request.form.get("ano_final") or 0) or None,
+            lado=request.form.get("lado", "Dianteiro").strip(),
+            codigo=request.form.get("codigo", "").strip(),
+            fornecedor=request.form.get("fornecedor", "").strip(),
+            quantidade=int(request.form.get("quantidade") or 0),
+            estoque_minimo=int(request.form.get("estoque_minimo") or 0),
+            valor_unitario=float(request.form.get("valor_unitario") or 0),
+            localizacao=request.form.get("localizacao", "").strip(),
+        )
+        if not item.veiculo:
+            flash("Informe o ve\u00edculo do para-brisa.", "danger")
+            return render_template("form_para_brisa.html", item=item)
+
+        db.session.add(item)
+        db.session.commit()
+        flash("Para-brisa adicionado ao estoque.", "success")
+        return redirect(url_for("para_brisas"))
+
+    return render_template("form_para_brisa.html", item=None)
+
+
+@app.route("/para_brisas/editar/<int:id>", methods=["GET", "POST"])
+@login_required
+def editar_para_brisa(id):
+    item = EstoqueParaBrisa.query.get_or_404(id)
+
+    if request.method == "POST":
+        item.veiculo = request.form.get("veiculo", "").strip()
+        item.modelo = request.form.get("modelo", "").strip()
+        item.ano_inicial = int(request.form.get("ano_inicial") or 0) or None
+        item.ano_final = int(request.form.get("ano_final") or 0) or None
+        item.lado = request.form.get("lado", "Dianteiro").strip()
+        item.codigo = request.form.get("codigo", "").strip()
+        item.fornecedor = request.form.get("fornecedor", "").strip()
+        item.quantidade = int(request.form.get("quantidade") or 0)
+        item.estoque_minimo = int(request.form.get("estoque_minimo") or 0)
+        item.valor_unitario = float(request.form.get("valor_unitario") or 0)
+        item.localizacao = request.form.get("localizacao", "").strip()
+        db.session.commit()
+        flash("Para-brisa atualizado.", "success")
+        return redirect(url_for("para_brisas"))
+
+    return render_template("form_para_brisa.html", item=item)
+
+
+@app.route("/para_brisas/excluir/<int:id>")
+@admin_required
+def excluir_para_brisa(id):
+    item = EstoqueParaBrisa.query.get_or_404(id)
+    db.session.delete(item)
+    db.session.commit()
+    flash("Para-brisa removido do estoque.", "success")
+    return redirect(url_for("para_brisas"))
 
 
 if __name__ == "__main__":

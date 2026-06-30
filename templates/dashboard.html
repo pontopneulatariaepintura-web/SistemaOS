@@ -25,4 +25,11 @@
     <p><b>Valor estimado em estoque:</b> R$ {{ "%.2f"|format(valor_estoque) }}</p>
     <div class="actions"><a class="btn btn-primary" href="{{ url_for('estoque') }}">Abrir estoque</a></div>
 </div>
+
+<div class="panel">
+    <h2>Para-brisas em estoque</h2>
+    <p><b>Modelos cadastrados:</b> {{ total_para_brisas }}</p>
+    <p><b>Itens com estoque baixo:</b> {{ para_brisas_baixo }}</p>
+    <div class="actions"><a class="btn btn-primary" href="{{ url_for('para_brisas') }}">Abrir para-brisas</a></div>
+</div>
 {% endblock %}

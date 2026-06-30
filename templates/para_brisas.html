@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Para-brisas em estoque{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>Para-brisas em estoque</h1>
+    <p><b>Total de unidades:</b> {{ total_unidades }} | <b>Valor estimado:</b> R$ {{ "%.2f"|format(valor_total) }}</p>
+    <div class="actions"><a class="btn btn-success" href="{{ url_for('novo_para_brisa') }}">Adicionar para-brisa</a></div>
+</div>
+<table>
+    <tr><th>Ve&iacute;culo</th><th>Modelo</th><th>Ano</th><th>Lado</th><th>C&oacute;digo</th><th>Fornecedor</th><th>Qtd.</th><th>M&iacute;nimo</th><th>Valor un.</th><th>Total</th><th>Local</th><th>Status</th><th>A&ccedil;&otilde;es</th></tr>
+    {% for item in itens %}
+    <tr>
+        <td>{{ item.veiculo }}</td>
+        <td>{{ item.modelo or '-' }}</td>
+        <td>{% if item.ano_inicial and item.ano_final %}{{ item.ano_inicial }} a {{ item.ano_final }}{% elif item.ano_inicial %}a partir de {{ item.ano_inicial }}{% elif item.ano_final %}at&eacute; {{ item.ano_final }}{% else %}-{% endif %}</td>
+        <td>{{ item.lado or '-' }}</td>
+        <td>{{ item.codigo or '-' }}</td>
+        <td>{{ item.fornecedor or '-' }}</td>
+        <td>{{ item.quantidade }}</td>
+        <td>{{ item.estoque_minimo }}</td>
+        <td>R$ {{ "%.2f"|format(item.valor_unitario or 0) }}</td>
+        <td>R$ {{ "%.2f"|format(item.valor_total) }}</td>
+        <td>{{ item.localizacao or '-' }}</td>
+        <td>{% if item.estoque_baixo %}<span class="baixo">Baixo</span>{% else %}<span class="ok">OK</span>{% endif %}</td>
+        <td><div class="actions"><a class="btn btn-primary" href="{{ url_for('editar_para_brisa', id=item.id) }}">Editar</a>{% if perfil_logado == 'admin' %}<a class="btn btn-danger" href="{{ url_for('excluir_para_brisa', id=item.id) }}" onclick="return confirm('Deseja excluir este para-brisa?')">Excluir</a>{% endif %}</div></td>
+    </tr>
+    {% else %}
+    <tr><td colspan="13">Nenhum para-brisa cadastrado.</td></tr>
+    {% endfor %}
+</table>
+{% endblock %}

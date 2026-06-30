@@ -50,3 +50,42 @@ class EstoquePeca(db.Model):
     @property
     def estoque_baixo(self):
         return (self.quantidade or 0) <= (self.estoque_minimo or 0)
+
+
+
+class EstoqueParaBrisa(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    veiculo = db.Column(db.String(120), nullable=False)
+    modelo = db.Column(db.String(120))
+    ano_inicial = db.Column(db.Integer)
+    ano_final = db.Column(db.Integer)
+    lado = db.Column(db.String(40), default="Dianteiro")
+    codigo = db.Column(db.String(50))
+    fornecedor = db.Column(db.String(120))
+    quantidade = db.Column(db.Integer, default=0)
+    estoque_minimo = db.Column(db.Integer, default=0)
+    valor_unitario = db.Column(db.Float, default=0)
+    localizacao = db.Column(db.String(120))
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    atualizado_em = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    @property
+    def descricao(self):
+        partes = [self.veiculo]
+        if self.modelo:
+            partes.append(self.modelo)
+        if self.ano_inicial and self.ano_final:
+            partes.append(f"{self.ano_inicial}/{self.ano_final}")
+        elif self.ano_inicial:
+            partes.append(f"a partir de {self.ano_inicial}")
+        elif self.ano_final:
+            partes.append(f"at? {self.ano_final}")
+        return " - ".join(partes)
+
+    @property
+    def valor_total(self):
+        return (self.quantidade or 0) * (self.valor_unitario or 0)
+
+    @property
+    def estoque_baixo(self):
+        return (self.quantidade or 0) <= (self.estoque_minimo or 0)
