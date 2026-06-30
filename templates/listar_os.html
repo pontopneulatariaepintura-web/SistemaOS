@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Ordens de Servi?o{% endblock %}
+{% block title %}Ordens de Servi&ccedil;o{% endblock %}
 {% block content %}
 <div class="panel">
-    <h1>Ordens de servi?o</h1>
+    <h1>Ordens de servi&ccedil;o</h1>
     <div class="actions"><a class="btn btn-success" href="{{ url_for('nova_os') }}">Nova OS</a></div>
 </div>
 {% for os in os_list %}
@@ -11,16 +11,16 @@
     <span class="status {{ os.status }}">{{ os.status }}</span>
     <p><b>Criado por:</b> {{ os.criado_por or '-' }}</p>
     <p><b>Cliente:</b> {{ os.cliente or '-' }} | <b>Placa:</b> {{ os.placa or '-' }} | <b>Seguradora:</b> {{ os.seguradora or '-' }}</p>
-    <p><b>Entrada:</b> {{ os.data_entrada or '-' }} | <b>Vistoria:</b> {{ os.data_vistoria or '-' }} | <b>Libera??o:</b> {{ os.data_liberacao_vistoria or '-' }}</p>
-    <p><b>Reparo:</b> {{ os.data_inicio_reparo or '-' }} | <b>Previs?o:</b> {{ os.previsao_entrega or '-' }} | <b>Pagamento:</b> {{ os.data_pagamento or '-' }}</p>
-    <p><b>Pe?as:</b> R$ {{ "%.2f"|format(os.valor_pecas or 0) }} | <b>M?o de obra:</b> R$ {{ "%.2f"|format(os.valor_mao_obra or 0) }} | <b>Total:</b> R$ {{ "%.2f"|format((os.valor_pecas or 0) + (os.valor_mao_obra or 0)) }}</p>
+    <p><b>Entrada:</b> {{ os.data_entrada or '-' }} | <b>Vistoria:</b> {{ os.data_vistoria or '-' }} | <b>Libera&ccedil;&atilde;o:</b> {{ os.data_liberacao_vistoria or '-' }}</p>
+    <p><b>Reparo:</b> {{ os.data_inicio_reparo or '-' }} | <b>Previs&atilde;o:</b> {{ os.previsao_entrega or '-' }} | <b>Pagamento:</b> {{ os.data_pagamento or '-' }}</p>
+    <p><b>Pe&ccedil;as:</b> R$ {{ "%.2f"|format(os.valor_pecas or 0) }} | <b>M&atilde;o de obra:</b> R$ {{ "%.2f"|format(os.valor_mao_obra or 0) }} | <b>Total:</b> R$ {{ "%.2f"|format((os.valor_pecas or 0) + (os.valor_mao_obra or 0)) }}</p>
     <div class="actions">
-        <a class="btn btn-success" href="{{ url_for('avancar', id=os.id) }}">Avan?ar etapa</a>
+        <a class="btn btn-success" href="{{ url_for('avancar', id=os.id) }}">Avan&ccedil;ar etapa</a>
         <a class="btn btn-primary" href="{{ url_for('editar_os', id=os.id) }}">Editar</a>
         {% if perfil_logado == 'admin' %}<a class="btn btn-danger" href="{{ url_for('excluir_os', id=os.id) }}" onclick="return confirm('Deseja excluir esta OS?')">Excluir</a>{% endif %}
     </div>
 </div>
 {% else %}
-<div class="panel">Nenhuma ordem de servi?o cadastrada.</div>
+<div class="panel">Nenhuma ordem de servi&ccedil;o cadastrada.</div>
 {% endfor %}
 {% endblock %}

@@ -40,7 +40,7 @@ def login_required(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
         if "user_id" not in session:
-            flash("Fa?a login para acessar o sistema.", "warning")
+            flash("Fa\u00e7a login para acessar o sistema.", "warning")
             return redirect(url_for("login"))
         return view(*args, **kwargs)
 
@@ -51,7 +51,7 @@ def admin_required(view):
     @wraps(view)
     def wrapped_view(*args, **kwargs):
         if "user_id" not in session:
-            flash("Fa?a login para acessar o sistema.", "warning")
+            flash("Fa\u00e7a login para acessar o sistema.", "warning")
             return redirect(url_for("login"))
         if session.get("role") != "admin":
             flash("Acesso permitido apenas para administradores.", "danger")
@@ -99,7 +99,7 @@ def login():
             flash("Login realizado com sucesso.", "success")
             return redirect(url_for("dashboard"))
 
-        flash("Usu?rio ou senha inv?lidos.", "danger")
+        flash("Usu\u00e1rio ou senha inv\u00e1lidos.", "danger")
 
     return render_template("login.html")
 
@@ -107,7 +107,7 @@ def login():
 @app.route("/logout")
 def logout():
     session.clear()
-    flash("Voc? saiu do sistema.", "info")
+    flash("Voc\u00ea saiu do sistema.", "info")
     return redirect(url_for("login"))
 
 
@@ -130,7 +130,7 @@ def alterar_senha():
             return render_template("alterar_senha.html")
 
         if nova_senha != confirmar_senha:
-            flash("A confirma??o da senha n?o confere.", "danger")
+            flash("A confirma\u00e7\u00e3o da senha n\u00e3o confere.", "danger")
             return render_template("alterar_senha.html")
 
         usuario.password = generate_password_hash(nova_senha)
@@ -190,17 +190,17 @@ def novo_usuario():
         role = request.form.get("role", "user")
 
         if not username or not password:
-            flash("Informe usu?rio e senha.", "danger")
+            flash("Informe usu\u00e1rio e senha.", "danger")
             return render_template("novo_usuario.html")
 
         if User.query.filter_by(username=username).first():
-            flash("J? existe um usu?rio com esse login.", "danger")
+            flash("J\u00e1 existe um usu\u00e1rio com esse login.", "danger")
             return render_template("novo_usuario.html")
 
         novo = User(username=username, password=generate_password_hash(password), role=role)
         db.session.add(novo)
         db.session.commit()
-        flash("Usu?rio criado com sucesso.", "success")
+        flash("Usu\u00e1rio criado com sucesso.", "success")
         return redirect(url_for("usuarios"))
 
     return render_template("novo_usuario.html")
@@ -212,16 +212,16 @@ def excluir_usuario(id):
     usuario = User.query.get_or_404(id)
 
     if usuario.username == "admin":
-        flash("N?o ? permitido excluir o usu?rio admin.", "danger")
+        flash("N\u00e3o \u00e9 permitido excluir o usu\u00e1rio admin.", "danger")
         return redirect(url_for("usuarios"))
 
     if usuario.id == session.get("user_id"):
-        flash("Voc? n?o pode excluir o pr?prio usu?rio logado.", "danger")
+        flash("Voc\u00ea n\u00e3o pode excluir o pr\u00f3prio usu\u00e1rio logado.", "danger")
         return redirect(url_for("usuarios"))
 
     db.session.delete(usuario)
     db.session.commit()
-    flash("Usu?rio exclu?do.", "success")
+    flash("Usu\u00e1rio exclu\u00eddo.", "success")
     return redirect(url_for("usuarios"))
 
 
@@ -232,11 +232,11 @@ def nova_os():
         numero_os = request.form.get("numero_os", "").strip()
 
         if not numero_os:
-            flash("Informe o n?mero da OS.", "danger")
+            flash("Informe o n\u00famero da OS.", "danger")
             return render_template("nova_os.html")
 
         if OS.query.filter_by(numero_os=numero_os).first():
-            flash("J? existe uma OS com esse n?mero.", "danger")
+            flash("J\u00e1 existe uma OS com esse n\u00famero.", "danger")
             return render_template("nova_os.html")
 
         nova = OS(
@@ -257,7 +257,7 @@ def nova_os():
         )
         db.session.add(nova)
         db.session.commit()
-        flash("Ordem de servi?o criada.", "success")
+        flash("Ordem de servi\u00e7o criada.", "success")
         return redirect(url_for("listar_os"))
 
     return render_template("nova_os.html")
@@ -290,7 +290,7 @@ def editar_os(id):
         os_item.valor_mao_obra = float(request.form.get("valor_mao_obra") or 0)
         os_item.status = request.form.get("status", os_item.status)
         db.session.commit()
-        flash("Ordem de servi?o atualizada.", "success")
+        flash("Ordem de servi\u00e7o atualizada.", "success")
         return redirect(url_for("listar_os"))
 
     return render_template("editar_os.html", os=os_item, status_flow=STATUS_FLOW)
@@ -302,7 +302,7 @@ def excluir_os(id):
     os_item = OS.query.get_or_404(id)
     db.session.delete(os_item)
     db.session.commit()
-    flash("Ordem de servi?o exclu?da.", "success")
+    flash("Ordem de servi\u00e7o exclu\u00edda.", "success")
     return redirect(url_for("listar_os"))
 
 
@@ -346,12 +346,12 @@ def nova_peca():
             localizacao=request.form.get("localizacao", "").strip(),
         )
         if not peca.nome:
-            flash("Informe o nome da pe?a.", "danger")
+            flash("Informe o nome da pe\u00e7a.", "danger")
             return render_template("form_peca.html", peca=peca)
 
         db.session.add(peca)
         db.session.commit()
-        flash("Pe?a adicionada ao estoque.", "success")
+        flash("Pe\u00e7a adicionada ao estoque.", "success")
         return redirect(url_for("estoque"))
 
     return render_template("form_peca.html", peca=None)
@@ -371,7 +371,7 @@ def editar_peca(id):
         peca.valor_unitario = float(request.form.get("valor_unitario") or 0)
         peca.localizacao = request.form.get("localizacao", "").strip()
         db.session.commit()
-        flash("Pe?a atualizada.", "success")
+        flash("Pe\u00e7a atualizada.", "success")
         return redirect(url_for("estoque"))
 
     return render_template("form_peca.html", peca=peca)
@@ -383,7 +383,7 @@ def excluir_peca(id):
     peca = EstoquePeca.query.get_or_404(id)
     db.session.delete(peca)
     db.session.commit()
-    flash("Pe?a removida do estoque.", "success")
+    flash("Pe\u00e7a removida do estoque.", "success")
     return redirect(url_for("estoque"))
 
 

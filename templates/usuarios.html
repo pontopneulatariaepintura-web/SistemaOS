@@ -1,21 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Usu?rios{% endblock %}
+{% block title %}Usu&aacute;rios{% endblock %}
 {% block content %}
 <div class="panel">
-    <h1>Usu?rios</h1>
-    <div class="actions"><a href="{{ url_for('novo_usuario') }}" class="btn btn-success">Novo usu?rio</a></div>
+    <h1>Usu&aacute;rios</h1>
+    <div class="actions"><a href="{{ url_for('novo_usuario') }}" class="btn btn-success">Novo usu&aacute;rio</a></div>
 </div>
 <table>
-    <tr><th>ID</th><th>Usu?rio</th><th>Perfil</th><th>Criado em</th><th>A??es</th></tr>
+    <tr><th>ID</th><th>Usu&aacute;rio</th><th>Perfil</th><th>Criado em</th><th>A&ccedil;&otilde;es</th></tr>
     {% for u in usuarios %}
     <tr>
         <td>{{ u.id }}</td>
         <td>{{ u.username }}</td>
-        <td>{{ 'Administrador' if u.role == 'admin' else 'Usu?rio' }}</td>
+        <td>{{ 'Administrador' if u.role == 'admin' else 'Usu&aacute;rio' }}</td>
         <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else '' }}</td>
         <td>
             {% if u.username != 'admin' and u.id != session.get('user_id') %}
-            <a href="{{ url_for('excluir_usuario', id=u.id) }}" class="btn btn-danger" onclick="return confirm('Deseja excluir este usu?rio?')">Excluir</a>
+            <a href="{{ url_for('excluir_usuario', id=u.id) }}" class="btn btn-danger" onclick="return confirm('Deseja excluir este usu&aacute;rio?')">Excluir</a>
             {% endif %}
         </td>
     </tr>

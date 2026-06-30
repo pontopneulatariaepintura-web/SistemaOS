@@ -1,13 +1,13 @@
 {% extends "base.html" %}
-{% block title %}Pe?as em estoque{% endblock %}
+{% block title %}Pe&ccedil;as em estoque{% endblock %}
 {% block content %}
 <div class="panel">
-    <h1>Pe?as em estoque</h1>
+    <h1>Pe&ccedil;as em estoque</h1>
     <p><b>Total de unidades:</b> {{ total_pecas }} | <b>Valor estimado:</b> R$ {{ "%.2f"|format(valor_total) }}</p>
-    <div class="actions"><a class="btn btn-success" href="{{ url_for('nova_peca') }}">Adicionar pe?a</a></div>
+    <div class="actions"><a class="btn btn-success" href="{{ url_for('nova_peca') }}">Adicionar pe&ccedil;a</a></div>
 </div>
 <table>
-    <tr><th>Pe?a</th><th>C?digo</th><th>Fornecedor</th><th>Qtd.</th><th>M?nimo</th><th>Valor un.</th><th>Total</th><th>Local</th><th>Status</th><th>A??es</th></tr>
+    <tr><th>Pe&ccedil;a</th><th>C&oacute;digo</th><th>Fornecedor</th><th>Qtd.</th><th>M&iacute;nimo</th><th>Valor un.</th><th>Total</th><th>Local</th><th>Status</th><th>A&ccedil;&otilde;es</th></tr>
     {% for peca in pecas %}
     <tr>
         <td>{{ peca.nome }}</td>
@@ -19,10 +19,10 @@
         <td>R$ {{ "%.2f"|format(peca.valor_total) }}</td>
         <td>{{ peca.localizacao or '-' }}</td>
         <td>{% if peca.estoque_baixo %}<span class="baixo">Baixo</span>{% else %}<span class="ok">OK</span>{% endif %}</td>
-        <td><div class="actions"><a class="btn btn-primary" href="{{ url_for('editar_peca', id=peca.id) }}">Editar</a>{% if perfil_logado == 'admin' %}<a class="btn btn-danger" href="{{ url_for('excluir_peca', id=peca.id) }}" onclick="return confirm('Deseja excluir esta pe?a?')">Excluir</a>{% endif %}</div></td>
+        <td><div class="actions"><a class="btn btn-primary" href="{{ url_for('editar_peca', id=peca.id) }}">Editar</a>{% if perfil_logado == 'admin' %}<a class="btn btn-danger" href="{{ url_for('excluir_peca', id=peca.id) }}" onclick="return confirm('Deseja excluir esta pe&ccedil;a?')">Excluir</a>{% endif %}</div></td>
     </tr>
     {% else %}
-    <tr><td colspan="10">Nenhuma pe?a cadastrada.</td></tr>
+    <tr><td colspan="10">Nenhuma pe&ccedil;a cadastrada.</td></tr>
     {% endfor %}
 </table>
 {% endblock %}

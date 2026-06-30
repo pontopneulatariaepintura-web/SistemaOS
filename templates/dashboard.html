@@ -13,14 +13,14 @@
 
 <div class="panel">
     <h2>Financeiro</h2>
-    <p><b>Pe?as em OS:</b> R$ {{ "%.2f"|format(valor_pecas) }}</p>
-    <p><b>M?o de obra:</b> R$ {{ "%.2f"|format(valor_mao_obra) }}</p>
+    <p><b>Pe&ccedil;as em OS:</b> R$ {{ "%.2f"|format(valor_pecas) }}</p>
+    <p><b>M&atilde;o de obra:</b> R$ {{ "%.2f"|format(valor_mao_obra) }}</p>
     <p><b>Total:</b> R$ {{ "%.2f"|format(valor_pecas + valor_mao_obra) }}</p>
 </div>
 
 <div class="panel">
     <h2>Estoque</h2>
-    <p><b>Tipos de pe?as cadastradas:</b> {{ total_itens_estoque }}</p>
+    <p><b>Tipos de pe&ccedil;as cadastradas:</b> {{ total_itens_estoque }}</p>
     <p><b>Itens com estoque baixo:</b> {{ estoque_baixo }}</p>
     <p><b>Valor estimado em estoque:</b> R$ {{ "%.2f"|format(valor_estoque) }}</p>
     <div class="actions"><a class="btn btn-primary" href="{{ url_for('estoque') }}">Abrir estoque</a></div>

@@ -2,22 +2,22 @@
 {% block title %}Editar OS{% endblock %}
 {% block content %}
 <div class="panel">
-    <h1>Editar ordem de servi?o</h1>
+    <h1>Editar ordem de servi&ccedil;o</h1>
     <form method="POST" class="form-grid">
-        <div><label>N?mero da OS</label><input type="text" name="numero_os" value="{{ os.numero_os }}" required></div>
+        <div><label>N&uacute;mero da OS</label><input type="text" name="numero_os" value="{{ os.numero_os }}" required></div>
         <div><label>Cliente</label><input type="text" name="cliente" value="{{ os.cliente or '' }}" required></div>
         <div><label>Placa</label><input type="text" name="placa" value="{{ os.placa or '' }}"></div>
         <div><label>Seguradora</label><input type="text" name="seguradora" value="{{ os.seguradora or '' }}"></div>
         <div><label>Status</label><select name="status">{% for status in status_flow %}<option value="{{ status }}" {% if os.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></div>
         <div><label>Entrada</label><input type="date" name="data_entrada" value="{{ os.data_entrada or '' }}"></div>
         <div><label>Vistoria</label><input type="date" name="data_vistoria" value="{{ os.data_vistoria or '' }}"></div>
-        <div><label>Libera??o da vistoria</label><input type="date" name="data_liberacao_vistoria" value="{{ os.data_liberacao_vistoria or '' }}"></div>
-        <div><label>In?cio do reparo</label><input type="date" name="data_inicio_reparo" value="{{ os.data_inicio_reparo or '' }}"></div>
-        <div><label>Previs?o de entrega</label><input type="date" name="previsao_entrega" value="{{ os.previsao_entrega or '' }}"></div>
+        <div><label>Libera&ccedil;&atilde;o da vistoria</label><input type="date" name="data_liberacao_vistoria" value="{{ os.data_liberacao_vistoria or '' }}"></div>
+        <div><label>In&iacute;cio do reparo</label><input type="date" name="data_inicio_reparo" value="{{ os.data_inicio_reparo or '' }}"></div>
+        <div><label>Previs&atilde;o de entrega</label><input type="date" name="previsao_entrega" value="{{ os.previsao_entrega or '' }}"></div>
         <div><label>Pagamento</label><input type="date" name="data_pagamento" value="{{ os.data_pagamento or '' }}"></div>
-        <div><label>Valor de pe?as</label><input type="number" step="0.01" min="0" name="valor_pecas" value="{{ os.valor_pecas or 0 }}"></div>
-        <div><label>Valor m?o de obra</label><input type="number" step="0.01" min="0" name="valor_mao_obra" value="{{ os.valor_mao_obra or 0 }}"></div>
-        <div class="full actions"><button class="btn btn-success" type="submit">Salvar altera??es</button><a class="btn btn-muted" href="{{ url_for('listar_os') }}">Voltar</a></div>
+        <div><label>Valor de pe&ccedil;as</label><input type="number" step="0.01" min="0" name="valor_pecas" value="{{ os.valor_pecas or 0 }}"></div>
+        <div><label>Valor m&atilde;o de obra</label><input type="number" step="0.01" min="0" name="valor_mao_obra" value="{{ os.valor_mao_obra or 0 }}"></div>
+        <div class="full actions"><button class="btn btn-success" type="submit">Salvar altera&ccedil;&otilde;es</button><a class="btn btn-muted" href="{{ url_for('listar_os') }}">Voltar</a></div>
     </form>
 </div>
 {% endblock %}

@@ -25,7 +25,7 @@
 <body>
     <div class="login-box">
         <h1>Sistema OS</h1>
-        <p>Acesse com seu usu?rio e senha.</p>
+        <p>Acesse com seu usu&aacute;rio e senha.</p>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -34,7 +34,7 @@
             {% endif %}
         {% endwith %}
         <form method="POST">
-            <label for="username">Usu?rio</label>
+            <label for="username">Usu&aacute;rio</label>
             <input id="username" type="text" name="username" autocomplete="username" required autofocus>
             <label for="password">Senha</label>
             <input id="password" type="password" name="password" autocomplete="current-password" required>
