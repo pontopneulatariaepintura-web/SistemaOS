@@ -6,8 +6,22 @@
     <title>Login - Sistema OS</title>
     <style>
         * { box-sizing: border-box; }
-        body { margin: 0; min-height: 100vh; font-family: Arial, Helvetica, sans-serif; background: #111827; display: flex; align-items: center; justify-content: center; padding: 20px; }
-        .login-box { width: 100%; max-width: 360px; background: white; border-radius: 12px; padding: 34px; box-shadow: 0 18px 45px rgba(0,0,0,.28); }
+        body {
+            margin: 0;
+            min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background-color: #111827;
+            background-image: linear-gradient(rgba(17,24,39,.78), rgba(17,24,39,.78)), url("{{ url_for('static', filename='logo-ponto-pneu.png') }}");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: min(820px, 86vw);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .login-box { width: 100%; max-width: 380px; background: rgba(255,255,255,.96); border-radius: 12px; padding: 34px; box-shadow: 0 18px 45px rgba(0,0,0,.28); text-align: center; }
+        .login-logo { width: 130px; height: 130px; border-radius: 50%; object-fit: contain; margin: 0 auto 16px; display: block; }
         h1 { margin: 0 0 8px; color: #111827; font-size: 26px; }
         p { margin: 0 0 22px; color: #4b5563; }
         label { display: block; font-weight: bold; margin: 12px 0 6px; }
@@ -24,6 +38,7 @@
 </head>
 <body>
     <div class="login-box">
+        <img class="login-logo" src="{{ url_for('static', filename='logo-ponto-pneu.png') }}" alt="Ponto Pneu Lataria e Pintura">
         <h1>Sistema OS</h1>
         <p>Acesse com seu usu&aacute;rio e senha.</p>
         {% with messages = get_flashed_messages(with_categories=true) %}
