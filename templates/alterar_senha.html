@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Alterar senha{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>Alterar senha</h1>
+    <form method="POST" class="form-grid">
+        <div class="full">
+            <label>Senha atual</label>
+            <input type="password" name="senha_atual" autocomplete="current-password" required>
+        </div>
+        <div>
+            <label>Nova senha</label>
+            <input type="password" name="nova_senha" autocomplete="new-password" required>
+        </div>
+        <div>
+            <label>Confirmar nova senha</label>
+            <input type="password" name="confirmar_senha" autocomplete="new-password" required>
+        </div>
+        <div class="full actions">
+            <button class="btn btn-success" type="submit">Salvar senha</button>
+            <a class="btn btn-muted" href="{{ url_for('dashboard') }}">Voltar</a>
+        </div>
+    </form>
+</div>
+{% endblock %}

@@ -1,141 +1,163 @@
-python
-from flask import Flask, render_template, request, redirect, session
-from werkzeug.security import generate_password_hash, check_password_hash
-from datetime import datetime
+from datetime import timedelta, datetime
+from functools import wraps
 import os
 
+from flask import Flask, flash, redirect, render_template, request, session, url_for
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from extensions import db
-from models import User, OS
+from models import EstoquePeca, OS, User
 
 app = Flask(__name__)
 
-# CONFIG
-app.secret_key = "SISTEMA-OS-2026"
-
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv(
-    "DATABASE_URL",
-    "sqlite:///database.db"
-)
-
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY", "troque-esta-chave-em-producao")
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL", "sqlite:///database.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
+app.config["SESSION_COOKIE_HTTPONLY"] = True
+app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+
+if app.config["SQLALCHEMY_DATABASE_URI"].startswith("postgres://"):
+    app.config["SQLALCHEMY_DATABASE_URI"] = app.config["SQLALCHEMY_DATABASE_URI"].replace(
+        "postgres://", "postgresql://", 1
+    )
 
 db.init_app(app)
 
-# CRIA BANCO
-with app.app_context():
-    db.create_all()
-
-    admin = User.query.filter_by(username="admin").first()
-
-    if not admin:
-        db.session.add(
-            User(
-                username="admin",
-                password=generate_password_hash("1234"),
-                role="admin"
-            )
-        )
-        db.session.commit()
-
-
-# HELPERS
-def logado():
-    return "user" in session
-
-
-def admin():
-    return session.get("role") == "admin"
+STATUS_FLOW = ["CRIADA", "VISTORIA", "LIBERADA", "REPARO", "FINALIZADA"]
 
 
 def parse_date(valor):
     if not valor:
         return None
-
     try:
         return datetime.strptime(valor, "%Y-%m-%d").date()
-    except:
+    except ValueError:
         return None
 
 
-STATUS_FLOW = [
-    "CRIADA",
-    "VISTORIA",
-    "LIBERADA",
-    "REPARO",
-    "FINALIZADA"
-]
+def login_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if "user_id" not in session:
+            flash("Fa?a login para acessar o sistema.", "warning")
+            return redirect(url_for("login"))
+        return view(*args, **kwargs)
+
+    return wrapped_view
 
 
-# LOGIN
+def admin_required(view):
+    @wraps(view)
+    def wrapped_view(*args, **kwargs):
+        if "user_id" not in session:
+            flash("Fa?a login para acessar o sistema.", "warning")
+            return redirect(url_for("login"))
+        if session.get("role") != "admin":
+            flash("Acesso permitido apenas para administradores.", "danger")
+            return redirect(url_for("dashboard"))
+        return view(*args, **kwargs)
+
+    return wrapped_view
+
+
+@app.context_processor
+def inject_user():
+    return {"usuario_logado": session.get("username"), "perfil_logado": session.get("role")}
+
+
+with app.app_context():
+    db.create_all()
+
+    admin = User.query.filter_by(username="admin").first()
+    if not admin:
+        admin = User(
+            username="admin",
+            password=generate_password_hash(os.getenv("ADMIN_PASSWORD", "1234")),
+            role="admin",
+        )
+        db.session.add(admin)
+        db.session.commit()
+
+
 @app.route("/login", methods=["GET", "POST"])
 def login():
+    if "user_id" in session:
+        return redirect(url_for("dashboard"))
 
     if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
 
-        usuario = User.query.filter_by(
-            username=request.form["username"]
-        ).first()
-
-        if usuario and check_password_hash(
-            usuario.password,
-            request.form["password"]
-        ):
-
-            session["user"] = usuario.username
+        usuario = User.query.filter_by(username=username).first()
+        if usuario and check_password_hash(usuario.password, password):
+            session.clear()
+            session.permanent = True
+            session["user_id"] = usuario.id
+            session["username"] = usuario.username
             session["role"] = usuario.role
+            flash("Login realizado com sucesso.", "success")
+            return redirect(url_for("dashboard"))
 
-            return redirect("/")
-
-        return "Usuário ou senha inválidos"
+        flash("Usu?rio ou senha inv?lidos.", "danger")
 
     return render_template("login.html")
 
 
-# LOGOUT
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect("/login")
+    flash("Voc? saiu do sistema.", "info")
+    return redirect(url_for("login"))
 
 
-# DASHBOARD
+@app.route("/alterar_senha", methods=["GET", "POST"])
+@login_required
+def alterar_senha():
+    usuario = User.query.get_or_404(session["user_id"])
+
+    if request.method == "POST":
+        senha_atual = request.form.get("senha_atual", "")
+        nova_senha = request.form.get("nova_senha", "")
+        confirmar_senha = request.form.get("confirmar_senha", "")
+
+        if not check_password_hash(usuario.password, senha_atual):
+            flash("Senha atual incorreta.", "danger")
+            return render_template("alterar_senha.html")
+
+        if len(nova_senha) < 4:
+            flash("A nova senha deve ter pelo menos 4 caracteres.", "danger")
+            return render_template("alterar_senha.html")
+
+        if nova_senha != confirmar_senha:
+            flash("A confirma??o da senha n?o confere.", "danger")
+            return render_template("alterar_senha.html")
+
+        usuario.password = generate_password_hash(nova_senha)
+        db.session.commit()
+        flash("Senha alterada com sucesso.", "success")
+        return redirect(url_for("dashboard"))
+
+    return render_template("alterar_senha.html")
+
+
 @app.route("/")
+@login_required
 def dashboard():
-
-    if not logado():
-        return redirect("/login")
-
     total_os = OS.query.count()
+    criadas = OS.query.filter_by(status="CRIADA").count()
+    vistoria = OS.query.filter_by(status="VISTORIA").count()
+    liberadas = OS.query.filter_by(status="LIBERADA").count()
+    reparo = OS.query.filter_by(status="REPARO").count()
+    finalizadas = OS.query.filter_by(status="FINALIZADA").count()
 
-    criadas = OS.query.filter_by(
-        status="CRIADA"
-    ).count()
+    ordens = OS.query.all()
+    valor_pecas = sum(item.valor_pecas or 0 for item in ordens)
+    valor_mao_obra = sum(item.valor_mao_obra or 0 for item in ordens)
 
-    vistoria = OS.query.filter_by(
-        status="VISTORIA"
-    ).count()
-
-    liberadas = OS.query.filter_by(
-        status="LIBERADA"
-    ).count()
-
-    reparo = OS.query.filter_by(
-        status="REPARO"
-    ).count()
-
-    finalizadas = OS.query.filter_by(
-        status="FINALIZADA"
-    ).count()
-
-    valor_pecas = sum(
-        os.valor_pecas or 0
-        for os in OS.query.all()
-    )
-
-    valor_mao_obra = sum(
-        os.valor_mao_obra or 0
-        for os in OS.query.all()
-    )
+    total_itens_estoque = EstoquePeca.query.count()
+    valor_estoque = sum((peca.quantidade or 0) * (peca.valor_unitario or 0) for peca in EstoquePeca.query.all())
+    estoque_baixo = EstoquePeca.query.filter(EstoquePeca.quantidade <= EstoquePeca.estoque_minimo).count()
 
     return render_template(
         "dashboard.html",
@@ -146,250 +168,224 @@ def dashboard():
         reparo=reparo,
         finalizadas=finalizadas,
         valor_pecas=valor_pecas,
-        valor_mao_obra=valor_mao_obra
+        valor_mao_obra=valor_mao_obra,
+        total_itens_estoque=total_itens_estoque,
+        valor_estoque=valor_estoque,
+        estoque_baixo=estoque_baixo,
     )
 
 
-# USUÁRIOS
 @app.route("/usuarios")
+@admin_required
 def usuarios():
-
-    if not logado() or not admin():
-        return "Acesso negado"
-
-    return render_template(
-        "usuarios.html",
-        usuarios=User.query.all()
-    )
+    return render_template("usuarios.html", usuarios=User.query.order_by(User.username).all())
 
 
 @app.route("/usuarios/novo", methods=["GET", "POST"])
+@admin_required
 def novo_usuario():
-
-    if not logado() or not admin():
-        return "Acesso negado"
-
     if request.method == "POST":
+        username = request.form.get("username", "").strip()
+        password = request.form.get("password", "")
+        role = request.form.get("role", "user")
 
-        existe = User.query.filter_by(
-            username=request.form["username"]
-        ).first()
+        if not username or not password:
+            flash("Informe usu?rio e senha.", "danger")
+            return render_template("novo_usuario.html")
 
-        if existe:
-            return "Usuário já existe"
+        if User.query.filter_by(username=username).first():
+            flash("J? existe um usu?rio com esse login.", "danger")
+            return render_template("novo_usuario.html")
 
-        novo = User(
-            username=request.form["username"],
-            password=generate_password_hash(
-                request.form["password"]
-            ),
-            role=request.form.get("role", "user")
-        )
-
+        novo = User(username=username, password=generate_password_hash(password), role=role)
         db.session.add(novo)
         db.session.commit()
-
-        return redirect("/usuarios")
+        flash("Usu?rio criado com sucesso.", "success")
+        return redirect(url_for("usuarios"))
 
     return render_template("novo_usuario.html")
 
 
 @app.route("/usuarios/excluir/<int:id>")
+@admin_required
 def excluir_usuario(id):
-
-    if not logado() or not admin():
-        return "Acesso negado"
-
     usuario = User.query.get_or_404(id)
 
     if usuario.username == "admin":
-        return "Não é permitido excluir o admin"
+        flash("N?o ? permitido excluir o usu?rio admin.", "danger")
+        return redirect(url_for("usuarios"))
+
+    if usuario.id == session.get("user_id"):
+        flash("Voc? n?o pode excluir o pr?prio usu?rio logado.", "danger")
+        return redirect(url_for("usuarios"))
 
     db.session.delete(usuario)
     db.session.commit()
+    flash("Usu?rio exclu?do.", "success")
+    return redirect(url_for("usuarios"))
 
-    return redirect("/usuarios")
 
-
-# NOVA OS
 @app.route("/nova_os", methods=["GET", "POST"])
+@login_required
 def nova_os():
-
-    if not logado():
-        return redirect("/login")
-
     if request.method == "POST":
+        numero_os = request.form.get("numero_os", "").strip()
+
+        if not numero_os:
+            flash("Informe o n?mero da OS.", "danger")
+            return render_template("nova_os.html")
+
+        if OS.query.filter_by(numero_os=numero_os).first():
+            flash("J? existe uma OS com esse n?mero.", "danger")
+            return render_template("nova_os.html")
 
         nova = OS(
-            numero_os=request.form["numero_os"],
-            cliente=request.form["cliente"],
-            placa=request.form["placa"],
-            seguradora=request.form["seguradora"],
-
-            data_entrada=parse_date(
-                request.form.get("data_entrada")
-            ),
-
-            data_vistoria=parse_date(
-                request.form.get("data_vistoria")
-            ),
-
-            data_liberacao_vistoria=parse_date(
-                request.form.get(
-                    "data_liberacao_vistoria"
-                )
-            ),
-
-            data_inicio_reparo=parse_date(
-                request.form.get(
-                    "data_inicio_reparo"
-                )
-            ),
-
-            previsao_entrega=parse_date(
-                request.form.get(
-                    "previsao_entrega"
-                )
-            ),
-
-            data_pagamento=parse_date(
-                request.form.get(
-                    "data_pagamento"
-                )
-            ),
-
-            valor_pecas=float(
-                request.form.get(
-                    "valor_pecas"
-                ) or 0
-            ),
-
-            valor_mao_obra=float(
-                request.form.get(
-                    "valor_mao_obra"
-                ) or 0
-            ),
-
+            numero_os=numero_os,
+            cliente=request.form.get("cliente", "").strip(),
+            placa=request.form.get("placa", "").strip().upper(),
+            seguradora=request.form.get("seguradora", "").strip(),
+            data_entrada=parse_date(request.form.get("data_entrada")),
+            data_vistoria=parse_date(request.form.get("data_vistoria")),
+            data_liberacao_vistoria=parse_date(request.form.get("data_liberacao_vistoria")),
+            data_inicio_reparo=parse_date(request.form.get("data_inicio_reparo")),
+            previsao_entrega=parse_date(request.form.get("previsao_entrega")),
+            data_pagamento=parse_date(request.form.get("data_pagamento")),
+            valor_pecas=float(request.form.get("valor_pecas") or 0),
+            valor_mao_obra=float(request.form.get("valor_mao_obra") or 0),
             status="CRIADA",
-            criado_por=session["user"]
+            criado_por=session["username"],
         )
-
         db.session.add(nova)
         db.session.commit()
-
-        return redirect("/listar_os")
+        flash("Ordem de servi?o criada.", "success")
+        return redirect(url_for("listar_os"))
 
     return render_template("nova_os.html")
 
 
-# LISTAR OS
 @app.route("/listar_os")
+@login_required
 def listar_os():
-
-    if not logado():
-        return redirect("/login")
-
-    lista = OS.query.order_by(
-        OS.id.desc()
-    ).all()
-
-    return render_template(
-        "listar_os.html",
-        os_list=lista
-    )
+    lista = OS.query.order_by(OS.id.desc()).all()
+    return render_template("listar_os.html", os_list=lista)
 
 
-# EDITAR OS
 @app.route("/editar_os/<int:id>", methods=["GET", "POST"])
+@login_required
 def editar_os(id):
-
-    if not logado():
-        return redirect("/login")
-
     os_item = OS.query.get_or_404(id)
 
     if request.method == "POST":
-
-        os_item.cliente = request.form["cliente"]
-        os_item.placa = request.form["placa"]
-        os_item.seguradora = request.form["seguradora"]
-
-        os_item.valor_pecas = float(
-            request.form.get(
-                "valor_pecas"
-            ) or 0
-        )
-
-        os_item.valor_mao_obra = float(
-            request.form.get(
-                "valor_mao_obra"
-            ) or 0
-        )
-
-        os_item.status = request.form["status"]
-
+        os_item.numero_os = request.form.get("numero_os", os_item.numero_os).strip()
+        os_item.cliente = request.form.get("cliente", "").strip()
+        os_item.placa = request.form.get("placa", "").strip().upper()
+        os_item.seguradora = request.form.get("seguradora", "").strip()
+        os_item.data_entrada = parse_date(request.form.get("data_entrada"))
+        os_item.data_vistoria = parse_date(request.form.get("data_vistoria"))
+        os_item.data_liberacao_vistoria = parse_date(request.form.get("data_liberacao_vistoria"))
+        os_item.data_inicio_reparo = parse_date(request.form.get("data_inicio_reparo"))
+        os_item.previsao_entrega = parse_date(request.form.get("previsao_entrega"))
+        os_item.data_pagamento = parse_date(request.form.get("data_pagamento"))
+        os_item.valor_pecas = float(request.form.get("valor_pecas") or 0)
+        os_item.valor_mao_obra = float(request.form.get("valor_mao_obra") or 0)
+        os_item.status = request.form.get("status", os_item.status)
         db.session.commit()
+        flash("Ordem de servi?o atualizada.", "success")
+        return redirect(url_for("listar_os"))
 
-        return redirect("/listar_os")
-
-    return render_template(
-        "editar_os.html",
-        os=os_item
-    )
+    return render_template("editar_os.html", os=os_item, status_flow=STATUS_FLOW)
 
 
-# EXCLUIR OS
 @app.route("/excluir_os/<int:id>")
+@admin_required
 def excluir_os(id):
-
-    if not logado():
-        return redirect("/login")
-
-    if not admin():
-        return "Acesso negado"
-
     os_item = OS.query.get_or_404(id)
-
     db.session.delete(os_item)
     db.session.commit()
+    flash("Ordem de servi?o exclu?da.", "success")
+    return redirect(url_for("listar_os"))
 
-    return redirect("/listar_os")
 
-
-# AVANÇAR ETAPA
 @app.route("/avancar/<int:id>")
+@login_required
 def avancar(id):
-
-    if not logado():
-        return redirect("/login")
-
     os_item = OS.query.get_or_404(id)
 
     if os_item.status not in STATUS_FLOW:
         os_item.status = "CRIADA"
     else:
-
-        indice = STATUS_FLOW.index(
-            os_item.status
-        )
-
-        if indice < len(
-            STATUS_FLOW
-        ) - 1:
-
-            os_item.status = STATUS_FLOW[
-                indice + 1
-            ]
+        indice = STATUS_FLOW.index(os_item.status)
+        if indice < len(STATUS_FLOW) - 1:
+            os_item.status = STATUS_FLOW[indice + 1]
 
     db.session.commit()
+    flash("Etapa atualizada.", "success")
+    return redirect(url_for("listar_os"))
 
-    return redirect("/listar_os")
+
+@app.route("/estoque")
+@login_required
+def estoque():
+    pecas = EstoquePeca.query.order_by(EstoquePeca.nome).all()
+    total_pecas = sum(peca.quantidade or 0 for peca in pecas)
+    valor_total = sum((peca.quantidade or 0) * (peca.valor_unitario or 0) for peca in pecas)
+    return render_template("estoque.html", pecas=pecas, total_pecas=total_pecas, valor_total=valor_total)
+
+
+@app.route("/estoque/nova", methods=["GET", "POST"])
+@login_required
+def nova_peca():
+    if request.method == "POST":
+        peca = EstoquePeca(
+            nome=request.form.get("nome", "").strip(),
+            codigo=request.form.get("codigo", "").strip(),
+            fornecedor=request.form.get("fornecedor", "").strip(),
+            quantidade=int(request.form.get("quantidade") or 0),
+            estoque_minimo=int(request.form.get("estoque_minimo") or 0),
+            valor_unitario=float(request.form.get("valor_unitario") or 0),
+            localizacao=request.form.get("localizacao", "").strip(),
+        )
+        if not peca.nome:
+            flash("Informe o nome da pe?a.", "danger")
+            return render_template("form_peca.html", peca=peca)
+
+        db.session.add(peca)
+        db.session.commit()
+        flash("Pe?a adicionada ao estoque.", "success")
+        return redirect(url_for("estoque"))
+
+    return render_template("form_peca.html", peca=None)
+
+
+@app.route("/estoque/editar/<int:id>", methods=["GET", "POST"])
+@login_required
+def editar_peca(id):
+    peca = EstoquePeca.query.get_or_404(id)
+
+    if request.method == "POST":
+        peca.nome = request.form.get("nome", "").strip()
+        peca.codigo = request.form.get("codigo", "").strip()
+        peca.fornecedor = request.form.get("fornecedor", "").strip()
+        peca.quantidade = int(request.form.get("quantidade") or 0)
+        peca.estoque_minimo = int(request.form.get("estoque_minimo") or 0)
+        peca.valor_unitario = float(request.form.get("valor_unitario") or 0)
+        peca.localizacao = request.form.get("localizacao", "").strip()
+        db.session.commit()
+        flash("Pe?a atualizada.", "success")
+        return redirect(url_for("estoque"))
+
+    return render_template("form_peca.html", peca=peca)
+
+
+@app.route("/estoque/excluir/<int:id>")
+@admin_required
+def excluir_peca(id):
+    peca = EstoquePeca.query.get_or_404(id)
+    db.session.delete(peca)
+    db.session.commit()
+    flash("Pe?a removida do estoque.", "success")
+    return redirect(url_for("estoque"))
 
 
 if __name__ == "__main__":
-    app.run(
-        host="0.0.0.0",
-        port=5000,
-        debug=False
-    )
-
+    app.run(host="0.0.0.0", port=int(os.getenv("PORT", 5000)), debug=False)

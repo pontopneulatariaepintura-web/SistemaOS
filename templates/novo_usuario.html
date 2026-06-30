@@ -1,77 +1,28 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-
-<head>
-    <meta charset="UTF-8">
-    <title>Novo Usuário</title>
-
-    <style>
-        body {
-            font-family: Arial;
-            background: #eef2f7;
-            margin: 0;
-        }
-
-        .container {
-            max-width: 500px;
-            margin: 60px auto;
-            background: #fff;
-            padding: 20px;
-            border-radius: 10px;
-        }
-
-        input {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 6px;
-        }
-
-        button {
-            width: 100%;
-            padding: 10px;
-            background: #28a745;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-        }
-
-        a {
-            display: block;
-            text-align: center;
-            margin-top: 10px;
-            color: #333;
-            text-decoration: none;
-        }
-    </style>
-</head>
-
-<body>
-
-<div class="container">
-
-    <h2>Novo Usuário</h2>
-
-    <form method="POST">
-
-        <label>Nome</label>
-        <input type="text" name="nome" required>
-
-        <label>Usuário</label>
-        <input type="text" name="usuario" required>
-
-        <label>Senha</label>
-        <input type="password" name="senha" required>
-
-        <button type="submit">Salvar</button>
+{% extends "base.html" %}
+{% block title %}Novo usu?rio{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>Novo usu?rio</h1>
+    <form method="POST" class="form-grid">
+        <div>
+            <label>Usu?rio</label>
+            <input type="text" name="username" required>
+        </div>
+        <div>
+            <label>Senha</label>
+            <input type="password" name="password" required>
+        </div>
+        <div>
+            <label>Perfil</label>
+            <select name="role">
+                <option value="user">Usu?rio</option>
+                <option value="admin">Administrador</option>
+            </select>
+        </div>
+        <div class="full actions">
+            <button class="btn btn-success" type="submit">Salvar</button>
+            <a class="btn btn-muted" href="{{ url_for('usuarios') }}">Voltar</a>
+        </div>
     </form>
-
-    <a href="{{ url_for('usuarios') }}">Voltar</a>
-
 </div>
-
-</body>
-</html>
+{% endblock %}

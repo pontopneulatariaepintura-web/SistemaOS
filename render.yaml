@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: sistema-os
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sistema-os-db
+          property: connectionString
+
+databases:
+  - name: sistema-os-db
+    plan: free
+    databaseName: sistemaos
+    user: sistemaos

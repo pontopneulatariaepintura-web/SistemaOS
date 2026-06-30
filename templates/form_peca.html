@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Editar pe?a' if peca else 'Nova pe?a' }}{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>{{ 'Editar pe?a' if peca else 'Nova pe?a' }}</h1>
+    <form method="POST" class="form-grid">
+        <div><label>Nome da pe?a</label><input type="text" name="nome" value="{{ peca.nome if peca else '' }}" required></div>
+        <div><label>C?digo</label><input type="text" name="codigo" value="{{ peca.codigo if peca else '' }}"></div>
+        <div><label>Fornecedor</label><input type="text" name="fornecedor" value="{{ peca.fornecedor if peca else '' }}"></div>
+        <div><label>Localiza??o</label><input type="text" name="localizacao" value="{{ peca.localizacao if peca else '' }}"></div>
+        <div><label>Quantidade</label><input type="number" min="0" name="quantidade" value="{{ peca.quantidade if peca else 0 }}"></div>
+        <div><label>Estoque m?nimo</label><input type="number" min="0" name="estoque_minimo" value="{{ peca.estoque_minimo if peca else 0 }}"></div>
+        <div><label>Valor unit?rio</label><input type="number" min="0" step="0.01" name="valor_unitario" value="{{ peca.valor_unitario if peca else 0 }}"></div>
+        <div class="full actions"><button class="btn btn-success" type="submit">Salvar</button><a class="btn btn-muted" href="{{ url_for('estoque') }}">Voltar</a></div>
+    </form>
+</div>
+{% endblock %}

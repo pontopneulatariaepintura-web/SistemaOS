@@ -1,98 +1,46 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-<meta charset="UTF-8">
-<title>Login - Sistema OS</title>
-
-<style>
-body {
-    margin: 0;
-    font-family: Arial;
-    background: linear-gradient(135deg, #1e3c72, #2a5298);
-    height: 100vh;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-/* CARD LOGIN */
-.login-box {
-    background: white;
-    padding: 40px;
-    border-radius: 12px;
-    width: 320px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-    text-align: center;
-}
-
-/* TITULO */
-.login-box h2 {
-    margin-bottom: 20px;
-    color: #2a5298;
-}
-
-/* INPUTS */
-.login-box input {
-    width: 100%;
-    padding: 12px;
-    margin: 8px 0;
-    border: 1px solid #ccc;
-    border-radius: 6px;
-    outline: none;
-}
-
-.login-box input:focus {
-    border-color: #2a5298;
-}
-
-/* BOTÃO */
-.login-box button {
-    width: 100%;
-    padding: 12px;
-    background: #2a5298;
-    border: none;
-    color: white;
-    border-radius: 6px;
-    cursor: pointer;
-    font-weight: bold;
-    margin-top: 10px;
-}
-
-.login-box button:hover {
-    background: #1e3c72;
-}
-
-/* TEXTO EXTRA */
-.footer {
-    margin-top: 15px;
-    font-size: 12px;
-    color: #666;
-}
-</style>
-
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Sistema OS</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; font-family: Arial, Helvetica, sans-serif; background: #111827; display: flex; align-items: center; justify-content: center; padding: 20px; }
+        .login-box { width: 100%; max-width: 360px; background: white; border-radius: 12px; padding: 34px; box-shadow: 0 18px 45px rgba(0,0,0,.28); }
+        h1 { margin: 0 0 8px; color: #111827; font-size: 26px; }
+        p { margin: 0 0 22px; color: #4b5563; }
+        label { display: block; font-weight: bold; margin: 12px 0 6px; }
+        input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 7px; font-size: 15px; }
+        button { width: 100%; margin-top: 18px; padding: 12px; border: 0; border-radius: 7px; background: #2563eb; color: white; font-weight: bold; cursor: pointer; }
+        button:hover { background: #1d4ed8; }
+        .flash { padding: 11px; border-radius: 7px; margin-bottom: 14px; font-weight: bold; }
+        .flash-success { background: #dcfce7; color: #166534; }
+        .flash-danger { background: #fee2e2; color: #991b1b; }
+        .flash-warning { background: #fef3c7; color: #92400e; }
+        .flash-info { background: #dbeafe; color: #1e40af; }
+        .footer { margin-top: 16px; color: #6b7280; font-size: 13px; text-align: center; }
+    </style>
 </head>
-
 <body>
-
-<div class="login-box">
-
-    <h2>🔐 Sistema OS</h2>
-
-    <form method="POST">
-
-        <input type="text" name="username" placeholder="Usuário" required>
-
-        <input type="password" name="password" placeholder="Senha" required>
-
-        <button type="submit">Entrar</button>
-
-    </form>
-
-    <div class="footer">
-        Ponto Pneu Lataria & Pintura
+    <div class="login-box">
+        <h1>Sistema OS</h1>
+        <p>Acesse com seu usu?rio e senha.</p>
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="flash flash-{{ category }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        <form method="POST">
+            <label for="username">Usu?rio</label>
+            <input id="username" type="text" name="username" autocomplete="username" required autofocus>
+            <label for="password">Senha</label>
+            <input id="password" type="password" name="password" autocomplete="current-password" required>
+            <button type="submit">Entrar</button>
+        </form>
+        <div class="footer">Ponto Pneu Lataria & Pintura</div>
     </div>
-
-</div>
-
 </body>
 </html>
