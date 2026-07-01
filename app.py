@@ -316,8 +316,37 @@ def nova_os():
 @app.route("/listar_os")
 @login_required
 def listar_os():
-    lista = OS.query.order_by(OS.id.desc()).all()
-    return render_template("listar_os.html", os_list=lista)
+    status = request.args.get("status", "").strip().upper()
+    query = OS.query
+    titulo = "Ordens de serviço em andamento"
+    empty_message = "Nenhuma ordem de serviço em andamento."
+
+    if status:
+        if status not in STATUS_FLOW:
+            flash("Filtro de status inválido.", "danger")
+            return redirect(url_for("listar_os"))
+        query = query.filter_by(status=status)
+        titulo = f"Ordens de serviço - {status}"
+        empty_message = f"Nenhuma ordem de serviço com status {status}."
+    else:
+        query = query.filter(OS.status != "FINALIZADA")
+
+    lista = query.order_by(OS.id.desc()).all()
+    return render_template("listar_os.html", os_list=lista, titulo=titulo, empty_message=empty_message, status_atual=status)
+
+
+@app.route("/os_finalizadas")
+@login_required
+def os_finalizadas():
+    lista = OS.query.filter_by(status="FINALIZADA").order_by(OS.id.desc()).all()
+    return render_template(
+        "listar_os.html",
+        os_list=lista,
+        titulo="Ordens de serviço finalizadas",
+        empty_message="Nenhuma ordem de serviço finalizada.",
+        status_atual="FINALIZADA",
+        finalizadas_view=True,
+    )
 
 
 @app.route("/editar_os/<int:id>", methods=["GET", "POST"])
