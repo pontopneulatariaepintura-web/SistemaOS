@@ -17,6 +17,7 @@ class OS(db.Model):
     cliente = db.Column(db.String(120))
     placa = db.Column(db.String(20))
     seguradora = db.Column(db.String(120))
+    tipo_reparo = db.Column(db.String(60))
     status = db.Column(db.String(30), default="CRIADA")
     data_entrada = db.Column(db.Date)
     data_vistoria = db.Column(db.Date)
@@ -79,7 +80,7 @@ class EstoqueParaBrisa(db.Model):
         elif self.ano_inicial:
             partes.append(f"a partir de {self.ano_inicial}")
         elif self.ano_final:
-            partes.append(f"at? {self.ano_final}")
+            partes.append(f"at&eacute; {self.ano_final}")
         return " - ".join(partes)
 
     @property

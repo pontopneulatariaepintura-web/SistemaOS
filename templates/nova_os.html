@@ -4,18 +4,27 @@
 <div class="panel">
     <h1>Nova ordem de servi&ccedil;o</h1>
     <form method="POST" class="form-grid">
-        <div><label>N&uacute;mero da OS</label><input type="text" name="numero_os" required></div>
-        <div><label>Cliente</label><input type="text" name="cliente" required></div>
-        <div><label>Placa</label><input type="text" name="placa"></div>
-        <div><label>Seguradora</label><input type="text" name="seguradora"></div>
-        <div><label>Entrada</label><input type="date" name="data_entrada"></div>
-        <div><label>Vistoria</label><input type="date" name="data_vistoria"></div>
-        <div><label>Libera&ccedil;&atilde;o da vistoria</label><input type="date" name="data_liberacao_vistoria"></div>
-        <div><label>In&iacute;cio do reparo</label><input type="date" name="data_inicio_reparo"></div>
-        <div><label>Previs&atilde;o de entrega</label><input type="date" name="previsao_entrega"></div>
-        <div><label>Pagamento</label><input type="date" name="data_pagamento"></div>
-        <div><label>Valor de pe&ccedil;as</label><input type="number" step="0.01" min="0" name="valor_pecas" value="0"></div>
-        <div><label>Valor m&atilde;o de obra</label><input type="number" step="0.01" min="0" name="valor_mao_obra" value="0"></div>
+        <div><label>N&uacute;mero da OS *</label><input type="text" name="numero_os" value="{{ form_data.get('numero_os', '') }}" required></div>
+        <div><label>Cliente *</label><input type="text" name="cliente" value="{{ form_data.get('cliente', '') }}" required></div>
+        <div><label>Placa *</label><input type="text" name="placa" value="{{ form_data.get('placa', '') }}" required></div>
+        <div><label>Seguradora *</label><input type="text" name="seguradora" value="{{ form_data.get('seguradora', '') }}" required></div>
+        <div class="full">
+            <label>Tipo de reparo *</label>
+            <select name="tipo_reparo" required>
+                <option value="">Selecione o que ser&aacute; feito no ve&iacute;culo</option>
+                {% for tipo in tipos_reparo %}
+                <option value="{{ tipo }}" {% if form_data.get('tipo_reparo') == tipo %}selected{% endif %}>{{ tipo }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div><label>Entrada</label><input type="date" name="data_entrada" value="{{ form_data.get('data_entrada', '') }}"></div>
+        <div><label>Vistoria</label><input type="date" name="data_vistoria" value="{{ form_data.get('data_vistoria', '') }}"></div>
+        <div><label>Libera&ccedil;&atilde;o da vistoria</label><input type="date" name="data_liberacao_vistoria" value="{{ form_data.get('data_liberacao_vistoria', '') }}"></div>
+        <div><label>In&iacute;cio do reparo</label><input type="date" name="data_inicio_reparo" value="{{ form_data.get('data_inicio_reparo', '') }}"></div>
+        <div><label>Previs&atilde;o de entrega</label><input type="date" name="previsao_entrega" value="{{ form_data.get('previsao_entrega', '') }}"></div>
+        <div><label>Pagamento</label><input type="date" name="data_pagamento" value="{{ form_data.get('data_pagamento', '') }}"></div>
+        <div><label>Valor de pe&ccedil;as *</label><input type="number" step="0.01" min="0" name="valor_pecas" value="{{ form_data.get('valor_pecas', '') }}" required></div>
+        <div><label>Valor m&atilde;o de obra *</label><input type="number" step="0.01" min="0" name="valor_mao_obra" value="{{ form_data.get('valor_mao_obra', '') }}" required></div>
         <div class="full actions"><button class="btn btn-success" type="submit">Salvar OS</button><a class="btn btn-muted" href="{{ url_for('listar_os') }}">Voltar</a></div>
     </form>
 </div>

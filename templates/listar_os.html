@@ -11,6 +11,7 @@
     <span class="status {{ os.status }}">{{ os.status }}</span>
     <p><b>Criado por:</b> {{ os.criado_por or '-' }}</p>
     <p><b>Cliente:</b> {{ os.cliente or '-' }} | <b>Placa:</b> {{ os.placa or '-' }} | <b>Seguradora:</b> {{ os.seguradora or '-' }}</p>
+    <p><b>Tipo de reparo:</b> {{ os.tipo_reparo or '-' }}</p>
     <p><b>Entrada:</b> {{ os.data_entrada or '-' }} | <b>Vistoria:</b> {{ os.data_vistoria or '-' }} | <b>Libera&ccedil;&atilde;o:</b> {{ os.data_liberacao_vistoria or '-' }}</p>
     <p><b>Reparo:</b> {{ os.data_inicio_reparo or '-' }} | <b>Previs&atilde;o:</b> {{ os.previsao_entrega or '-' }} | <b>Pagamento:</b> {{ os.data_pagamento or '-' }}</p>
     <p><b>Pe&ccedil;as:</b> R$ {{ "%.2f"|format(os.valor_pecas or 0) }} | <b>M&atilde;o de obra:</b> R$ {{ "%.2f"|format(os.valor_mao_obra or 0) }} | <b>Total:</b> R$ {{ "%.2f"|format((os.valor_pecas or 0) + (os.valor_mao_obra or 0)) }}</p>

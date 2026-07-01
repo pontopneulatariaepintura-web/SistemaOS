@@ -3,6 +3,7 @@ from functools import wraps
 import os
 
 from flask import Flask, flash, redirect, render_template, request, session, url_for
+from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from extensions import db
@@ -25,6 +26,7 @@ if app.config["SQLALCHEMY_DATABASE_URI"].startswith("postgres://"):
 db.init_app(app)
 
 STATUS_FLOW = ["CRIADA", "VISTORIA", "LIBERADA", "REPARO", "FINALIZADA"]
+TIPOS_REPARO = ["Pequenos reparos", "Troca de pneu/roda", "Lataria e Pintura", "Parabrisa"]
 
 
 def parse_date(valor):
@@ -34,6 +36,24 @@ def parse_date(valor):
         return datetime.strptime(valor, "%Y-%m-%d").date()
     except ValueError:
         return None
+
+
+def ensure_os_columns():
+    inspector = inspect(db.engine)
+    existing = {column["name"] for column in inspector.get_columns("os")}
+    dialect = db.engine.dialect.name
+
+    column_sql = {
+        "tipo_reparo": "VARCHAR(60)",
+        "data_criacao": "TIMESTAMP" if dialect == "postgresql" else "DATETIME",
+        "ultima_atualizacao": "TIMESTAMP" if dialect == "postgresql" else "DATETIME",
+    }
+
+    for column_name, column_type in column_sql.items():
+        if column_name not in existing:
+            db.session.execute(text(f"ALTER TABLE os ADD COLUMN {column_name} {column_type}"))
+
+    db.session.commit()
 
 
 def login_required(view):
@@ -68,6 +88,7 @@ def inject_user():
 
 with app.app_context():
     db.create_all()
+    ensure_os_columns()
 
     admin = User.query.filter_by(username="admin").first()
     if not admin:
@@ -236,28 +257,51 @@ def excluir_usuario(id):
 def nova_os():
     if request.method == "POST":
         numero_os = request.form.get("numero_os", "").strip()
+        cliente = request.form.get("cliente", "").strip()
+        placa = request.form.get("placa", "").strip().upper()
+        seguradora = request.form.get("seguradora", "").strip()
+        tipo_reparo = request.form.get("tipo_reparo", "").strip()
+        valor_pecas_raw = request.form.get("valor_pecas", "").strip()
+        valor_mao_obra_raw = request.form.get("valor_mao_obra", "").strip()
+        form_data = request.form
 
-        if not numero_os:
-            flash("Informe o n\u00famero da OS.", "danger")
-            return render_template("nova_os.html")
+        if not all([numero_os, cliente, placa, seguradora, tipo_reparo, valor_pecas_raw, valor_mao_obra_raw]):
+            flash("Preencha todos os campos obrigat\u00f3rios da ordem de servi\u00e7o.", "danger")
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO)
+
+        if tipo_reparo not in TIPOS_REPARO:
+            flash("Selecione um tipo de reparo v\u00e1lido.", "danger")
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO)
+
+        try:
+            valor_pecas = float(valor_pecas_raw)
+            valor_mao_obra = float(valor_mao_obra_raw)
+        except ValueError:
+            flash("Informe valores v\u00e1lidos para pe\u00e7as e m\u00e3o de obra.", "danger")
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO)
+
+        if valor_pecas < 0 or valor_mao_obra < 0:
+            flash("Os valores de pe\u00e7as e m\u00e3o de obra n\u00e3o podem ser negativos.", "danger")
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO)
 
         if OS.query.filter_by(numero_os=numero_os).first():
             flash("J\u00e1 existe uma OS com esse n\u00famero.", "danger")
-            return render_template("nova_os.html")
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO)
 
         nova = OS(
             numero_os=numero_os,
-            cliente=request.form.get("cliente", "").strip(),
-            placa=request.form.get("placa", "").strip().upper(),
-            seguradora=request.form.get("seguradora", "").strip(),
+            cliente=cliente,
+            placa=placa,
+            seguradora=seguradora,
+            tipo_reparo=tipo_reparo,
             data_entrada=parse_date(request.form.get("data_entrada")),
             data_vistoria=parse_date(request.form.get("data_vistoria")),
             data_liberacao_vistoria=parse_date(request.form.get("data_liberacao_vistoria")),
             data_inicio_reparo=parse_date(request.form.get("data_inicio_reparo")),
             previsao_entrega=parse_date(request.form.get("previsao_entrega")),
             data_pagamento=parse_date(request.form.get("data_pagamento")),
-            valor_pecas=float(request.form.get("valor_pecas") or 0),
-            valor_mao_obra=float(request.form.get("valor_mao_obra") or 0),
+            valor_pecas=valor_pecas,
+            valor_mao_obra=valor_mao_obra,
             status="CRIADA",
             criado_por=session["username"],
         )
@@ -266,7 +310,7 @@ def nova_os():
         flash("Ordem de servi\u00e7o criada.", "success")
         return redirect(url_for("listar_os"))
 
-    return render_template("nova_os.html")
+    return render_template("nova_os.html", form_data={}, tipos_reparo=TIPOS_REPARO)
 
 
 @app.route("/listar_os")
@@ -286,6 +330,7 @@ def editar_os(id):
         os_item.cliente = request.form.get("cliente", "").strip()
         os_item.placa = request.form.get("placa", "").strip().upper()
         os_item.seguradora = request.form.get("seguradora", "").strip()
+        os_item.tipo_reparo = request.form.get("tipo_reparo", "").strip()
         os_item.data_entrada = parse_date(request.form.get("data_entrada"))
         os_item.data_vistoria = parse_date(request.form.get("data_vistoria"))
         os_item.data_liberacao_vistoria = parse_date(request.form.get("data_liberacao_vistoria"))
@@ -299,7 +344,7 @@ def editar_os(id):
         flash("Ordem de servi\u00e7o atualizada.", "success")
         return redirect(url_for("listar_os"))
 
-    return render_template("editar_os.html", os=os_item, status_flow=STATUS_FLOW)
+    return render_template("editar_os.html", os=os_item, status_flow=STATUS_FLOW, tipos_reparo=TIPOS_REPARO)
 
 
 @app.route("/excluir_os/<int:id>")
