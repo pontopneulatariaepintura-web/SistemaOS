@@ -11,7 +11,7 @@
     <tr>
         <td>{{ u.id }}</td>
         <td>{{ u.username }}</td>
-        <td>{{ 'Administrador' if u.role == 'admin' else 'Usu&aacute;rio' }}</td>
+        <td>{% if u.role == 'admin' %}Administrador{% else %}Usu&aacute;rio{% endif %}</td>
         <td>{{ u.created_at.strftime('%d/%m/%Y %H:%M') if u.created_at else '' }}</td>
         <td>
             {% if u.username != 'admin' and u.id != session.get('user_id') %}

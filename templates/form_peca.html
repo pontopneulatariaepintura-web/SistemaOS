@@ -1,8 +1,8 @@
-﻿{% extends "base.html" %}
-{% block title %}{{ 'Editar pe&ccedil;a' if peca else 'Nova pe&ccedil;a' }}{% endblock %}
+{% extends "base.html" %}
+{% block title %}{% if peca %}Editar pe&ccedil;a{% else %}Nova pe&ccedil;a{% endif %}{% endblock %}
 {% block content %}
 <div class="panel">
-    <h1>{{ 'Editar pe&ccedil;a' if peca else 'Nova pe&ccedil;a' }}</h1>
+    <h1>{% if peca %}Editar pe&ccedil;a{% else %}Nova pe&ccedil;a{% endif %}</h1>
     <form method="POST" class="form-grid">
         <div><label>Nome da pe&ccedil;a</label><input type="text" name="nome" value="{{ peca.nome if peca else '' }}" required></div>
         <div><label>C&oacute;digo</label><input type="text" name="codigo" value="{{ peca.codigo if peca else '' }}"></div>

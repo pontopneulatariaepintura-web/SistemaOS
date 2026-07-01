@@ -2,7 +2,7 @@
 {% block title %}Ordens de Servi&ccedil;o{% endblock %}
 {% block content %}
 <div class="panel">
-    <h1>{{ titulo or "Ordens de servi&ccedil;o" }}</h1>
+    <h1>{% if titulo %}{{ titulo }}{% else %}Ordens de servi&ccedil;o{% endif %}</h1>
     <div class="actions"><a class="btn btn-success" href="{{ url_for('nova_os') }}">Nova OS</a><a class="btn btn-primary" href="{{ url_for('listar_os') }}">Em andamento</a><a class="btn btn-muted" href="{{ url_for('os_finalizadas') }}">Finalizadas</a></div>
 </div>
 {% for os in os_list %}
@@ -22,6 +22,6 @@
     </div>
 </div>
 {% else %}
-<div class="panel">{{ empty_message or "Nenhuma ordem de servi&ccedil;o cadastrada." }}</div>
+<div class="panel">{% if empty_message %}{{ empty_message }}{% else %}Nenhuma ordem de servi&ccedil;o cadastrada.{% endif %}</div>
 {% endfor %}
 {% endblock %}
