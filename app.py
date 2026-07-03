@@ -72,28 +72,31 @@ def montar_alertas_prazo():
     hoje = datetime.now().date()
     limite = hoje + timedelta(days=2)
     campos = [
-        ("Vistoria", "data_vistoria"),
-        ("Reparo", "data_inicio_reparo"),
-        ("Previsão de entrega", "previsao_entrega"),
+        ("Vistoria", "data_vistoria", {"CRIADA", "VISTORIA"}),
+        ("Reparo", "data_inicio_reparo", {"LIBERADA", "REPARO"}),
+        ("Previs\u00e3o de entrega", "previsao_entrega", {"CRIADA", "VISTORIA", "LIBERADA", "REPARO"}),
     ]
     alertas = []
 
     ordens = OS.query.filter(OS.status != "FINALIZADA").all()
     for os_item in ordens:
-        for titulo, campo in campos:
+        for titulo, campo, status_validos in campos:
+            if os_item.status not in status_validos:
+                continue
+
             prazo = getattr(os_item, campo)
             if not prazo or prazo > limite:
                 continue
 
             dias = (prazo - hoje).days
             if dias < 0:
-                situacao = f"vencido há {abs(dias)} dia(s)"
+                situacao = f"vencido h\u00e1 {abs(dias)} dia(s)"
                 classe = "danger"
             elif dias == 0:
                 situacao = "vence hoje"
                 classe = "danger"
             elif dias == 1:
-                situacao = "vence amanhã"
+                situacao = "vence amanh\u00e3"
                 classe = "warning"
             else:
                 situacao = f"vence em {dias} dias"
