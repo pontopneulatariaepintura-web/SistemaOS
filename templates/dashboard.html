@@ -9,8 +9,9 @@
         {% for alerta in prazo_alertas %}
         <a class="prazo-item prazo-{{ alerta.classe }}" href="{{ url_for('editar_os', id=alerta.os.id) }}">
             <div>
-                <b>{{ alerta.tipo }}</b> da OS #{{ alerta.os.numero_os }} - {{ alerta.os.cliente or 'Cliente n&atilde;o informado' }}
-                <small>{{ alerta.os.placa or '-' }} | {{ alerta.os.status }}</small>
+                <b>{{ alerta.tipo }}</b> da OS #{{ alerta.os.numero_os }}
+                <small><b>Cliente:</b> {{ alerta.os.cliente or 'Cliente n&atilde;o informado' }}</small>
+                <small><b>Placa:</b> {{ alerta.os.placa or '-' }} | <b>Status:</b> {{ alerta.os.status }}</small>
             </div>
             <span>{{ alerta.prazo.strftime('%d/%m/%Y') }} - {{ alerta.situacao }}</span>
         </a>
