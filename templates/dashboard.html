@@ -3,12 +3,12 @@
 {% block content %}
 <h1>Dashboard</h1>
 <div class="grid">
-    <a class="card metric-card" href="{{ url_for('listar_os') }}"><h3>Total de OS em andamento</h3><div class="numero">{{ total_os - finalizadas }}</div></a>
-    <a class="card metric-card" href="{{ url_for('listar_os', status='CRIADA') }}"><h3>Criadas</h3><div class="numero">{{ criadas }}</div></a>
-    <a class="card metric-card" href="{{ url_for('listar_os', status='VISTORIA') }}"><h3>Vistoria</h3><div class="numero">{{ vistoria }}</div></a>
-    <a class="card metric-card" href="{{ url_for('listar_os', status='LIBERADA') }}"><h3>Liberadas</h3><div class="numero">{{ liberadas }}</div></a>
-    <a class="card metric-card" href="{{ url_for('listar_os', status='REPARO') }}"><h3>Em reparo</h3><div class="numero">{{ reparo }}</div></a>
-    <a class="card metric-card" href="{{ url_for('os_finalizadas') }}"><h3>Finalizadas</h3><div class="numero">{{ finalizadas }}</div></a>
+    <a class="card metric-card metric-total" href="{{ url_for('listar_os') }}"><h3>Total de OS em andamento</h3><div class="numero">{{ total_os - finalizadas }}</div></a>
+    <a class="card metric-card metric-criadas" href="{{ url_for('listar_os', status='CRIADA') }}"><h3>Criadas</h3><div class="numero">{{ criadas }}</div></a>
+    <a class="card metric-card metric-vistoria" href="{{ url_for('listar_os', status='VISTORIA') }}"><h3>Vistoria</h3><div class="numero">{{ vistoria }}</div></a>
+    <a class="card metric-card metric-liberadas" href="{{ url_for('listar_os', status='LIBERADA') }}"><h3>Liberadas</h3><div class="numero">{{ liberadas }}</div></a>
+    <a class="card metric-card metric-reparo" href="{{ url_for('listar_os', status='REPARO') }}"><h3>Em reparo</h3><div class="numero">{{ reparo }}</div></a>
+    <a class="card metric-card metric-finalizadas" href="{{ url_for('os_finalizadas') }}"><h3>Finalizadas</h3><div class="numero">{{ finalizadas }}</div></a>
 </div>
 
 <div class="panel">

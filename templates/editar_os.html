@@ -3,12 +3,14 @@
 {% block content %}
 <div class="panel">
     <h1>Editar ordem de servi&ccedil;o</h1>
-    <form method="POST" class="form-grid">
+    <form method="POST" class="form-grid" enctype="multipart/form-data">
         <div><label>N&uacute;mero da OS</label><input type="text" name="numero_os" value="{{ os.numero_os }}" required></div>
         <div><label>Cliente</label><input type="text" name="cliente" value="{{ os.cliente or '' }}" required></div>
+        <div><label>Carro/modelo</label><input type="text" name="carro_modelo" value="{{ os.carro_modelo or '' }}"></div>
         <div><label>Placa *</label><input type="text" name="placa" value="{{ os.placa or '' }}" required></div>
-        <div><label>Seguradora *</label><input type="text" name="seguradora" value="{{ os.seguradora or '' }}" required></div>
+        <div><label>Seguradora *</label><select name="seguradora" required><option value="">Selecione</option>{% for seguradora in seguradoras %}<option value="{{ seguradora }}" {% if os.seguradora == seguradora %}selected{% endif %}>{{ seguradora }}</option>{% endfor %}</select></div>
         <div><label>Status</label><select name="status">{% for status in status_flow %}<option value="{{ status }}" {% if os.status == status %}selected{% endif %}>{{ status }}</option>{% endfor %}</select></div>
+        <div><label>Ve&iacute;culo de terceiro?</label><select name="veiculo_terceiro"><option value="nao" {% if not os.veiculo_terceiro %}selected{% endif %}>N&atilde;o</option><option value="sim" {% if os.veiculo_terceiro %}selected{% endif %}>Sim</option></select></div>
         <div><label>Tipo de reparo *</label><select name="tipo_reparo" required><option value="">Selecione</option>{% for tipo in tipos_reparo %}<option value="{{ tipo }}" {% if os.tipo_reparo == tipo %}selected{% endif %}>{{ tipo }}</option>{% endfor %}</select></div>
         <div><label>Entrada</label><input type="date" name="data_entrada" value="{{ os.data_entrada or '' }}"></div>
         <div><label>Vistoria</label><input type="date" name="data_vistoria" value="{{ os.data_vistoria or '' }}"></div>
@@ -18,7 +20,25 @@
         <div><label>Pagamento</label><input type="date" name="data_pagamento" value="{{ os.data_pagamento or '' }}"></div>
         <div><label>Valor de pe&ccedil;as</label><input type="number" step="0.01" min="0" name="valor_pecas" value="{{ os.valor_pecas or 0 }}" required></div>
         <div><label>Valor m&atilde;o de obra</label><input type="number" step="0.01" min="0" name="valor_mao_obra" value="{{ os.valor_mao_obra or 0 }}" required></div>
+        <div><label>Custo de pe&ccedil;as</label><input type="number" step="0.01" min="0" name="custo_pecas" value="{{ os.custo_pecas or 0 }}"></div>
+        <div><label>Or&ccedil;amento</label><input type="number" step="0.01" min="0" name="orcamento" value="{{ os.orcamento or 0 }}"></div>
+        <div><label>Franquia</label><input type="number" step="0.01" min="0" name="franquia" value="{{ os.franquia or 0 }}"></div>
+        <div><label>Total a receber</label><input type="number" step="0.01" min="0" name="total_receber" value="{{ os.total_receber or 0 }}"></div>
+        <div class="full"><label>Adicionar fotos do ve&iacute;culo</label><input type="file" name="fotos" accept="image/*" multiple></div>
         <div class="full actions"><button class="btn btn-success" type="submit">Salvar altera&ccedil;&otilde;es</button><a class="btn btn-muted" href="{{ url_for('listar_os') }}">Voltar</a></div>
     </form>
 </div>
+{% if os.fotos %}
+<div class="panel">
+    <h2>Fotos do ve&iacute;culo</h2>
+    <div class="photo-grid">
+        {% for foto in os.fotos %}
+        <div class="photo-item">
+            <img src="{{ url_for('os_foto', id=foto.id) }}" alt="Foto da OS {{ os.numero_os }}">
+            {% if perfil_logado == 'admin' %}<a class="btn btn-danger" href="{{ url_for('excluir_os_foto', id=foto.id) }}" onclick="return confirm('Deseja excluir esta foto?')">Excluir foto</a>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}

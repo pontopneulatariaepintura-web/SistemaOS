@@ -2,12 +2,12 @@ from datetime import timedelta, datetime
 from functools import wraps
 import os
 
-from flask import Flask, flash, redirect, render_template, request, session, url_for
+from flask import Flask, Response, abort, flash, redirect, render_template, request, session, url_for
 from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from extensions import db
-from models import EstoqueParaBrisa, EstoquePeca, OS, User
+from models import EstoqueParaBrisa, EstoquePeca, OS, OSFoto, User
 
 app = Flask(__name__)
 
@@ -17,6 +17,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["PERMANENT_SESSION_LIFETIME"] = timedelta(hours=8)
 app.config["SESSION_COOKIE_HTTPONLY"] = True
 app.config["SESSION_COOKIE_SAMESITE"] = "Lax"
+app.config["MAX_CONTENT_LENGTH"] = 16 * 1024 * 1024
 
 if app.config["SQLALCHEMY_DATABASE_URI"].startswith("postgres://"):
     app.config["SQLALCHEMY_DATABASE_URI"] = app.config["SQLALCHEMY_DATABASE_URI"].replace(
@@ -27,6 +28,7 @@ db.init_app(app)
 
 STATUS_FLOW = ["CRIADA", "VISTORIA", "LIBERADA", "REPARO", "FINALIZADA"]
 TIPOS_REPARO = ["Pequenos reparos", "Troca de pneu/roda", "Lataria e Pintura", "Parabrisa"]
+SEGURADORAS = ["Porto Seguro", "Tokio", "HDI", "Yellum", "Mapfr", "Zurich", "MaxPar Car Glass", "Alura", "Allianz", "Youse", "Suhai", "Bradesco", "Itau", "Mithsui", "Santander", "Sura", "Loovi", "Conecta", "Pioneira", "Alfa", "Guara", "Potencia BR"]
 
 
 def parse_date(valor):
@@ -38,6 +40,34 @@ def parse_date(valor):
         return None
 
 
+def parse_float(valor):
+    if valor in (None, ""):
+        return 0
+    return float(str(valor).replace(",", "."))
+
+
+def save_os_fotos(os_id):
+    fotos = request.files.getlist("fotos")
+    for foto in fotos:
+        if not foto or not foto.filename:
+            continue
+        if not (foto.content_type or "").startswith("image/"):
+            flash("Somente arquivos de imagem foram aceitos nas fotos da OS.", "warning")
+            continue
+        data = foto.read()
+        if not data:
+            continue
+        db.session.add(
+            OSFoto(
+                os_id=os_id,
+                filename=foto.filename,
+                content_type=foto.content_type or "image/jpeg",
+                data=data,
+            )
+        )
+    db.session.commit()
+
+
 def ensure_os_columns():
     inspector = inspect(db.engine)
     existing = {column["name"] for column in inspector.get_columns("os")}
@@ -45,6 +75,12 @@ def ensure_os_columns():
 
     column_sql = {
         "tipo_reparo": "VARCHAR(60)",
+        "carro_modelo": "VARCHAR(120)",
+        "custo_pecas": "FLOAT",
+        "orcamento": "FLOAT",
+        "franquia": "FLOAT",
+        "veiculo_terceiro": "BOOLEAN",
+        "total_receber": "FLOAT",
         "data_criacao": "TIMESTAMP" if dialect == "postgresql" else "DATETIME",
         "ultima_atualizacao": "TIMESTAMP" if dialect == "postgresql" else "DATETIME",
     }
@@ -260,39 +296,59 @@ def nova_os():
         cliente = request.form.get("cliente", "").strip()
         placa = request.form.get("placa", "").strip().upper()
         seguradora = request.form.get("seguradora", "").strip()
+        carro_modelo = request.form.get("carro_modelo", "").strip()
         tipo_reparo = request.form.get("tipo_reparo", "").strip()
         valor_pecas_raw = request.form.get("valor_pecas", "").strip()
         valor_mao_obra_raw = request.form.get("valor_mao_obra", "").strip()
+        custo_pecas_raw = request.form.get("custo_pecas", "").strip()
+        orcamento_raw = request.form.get("orcamento", "").strip()
+        franquia_raw = request.form.get("franquia", "").strip()
+        total_receber_raw = request.form.get("total_receber", "").strip()
+        veiculo_terceiro = request.form.get("veiculo_terceiro") == "sim"
         form_data = request.form
 
         if not all([numero_os, cliente, placa, seguradora, tipo_reparo, valor_pecas_raw, valor_mao_obra_raw]):
             flash("Preencha todos os campos obrigat\u00f3rios da ordem de servi\u00e7o.", "danger")
-            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO)
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
+
+        if seguradora not in SEGURADORAS:
+            flash("Selecione uma seguradora v\u00e1lida.", "danger")
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
 
         if tipo_reparo not in TIPOS_REPARO:
             flash("Selecione um tipo de reparo v\u00e1lido.", "danger")
-            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO)
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
 
         try:
-            valor_pecas = float(valor_pecas_raw)
-            valor_mao_obra = float(valor_mao_obra_raw)
+            valor_pecas = parse_float(valor_pecas_raw)
+            valor_mao_obra = parse_float(valor_mao_obra_raw)
+            custo_pecas = parse_float(custo_pecas_raw)
+            orcamento = parse_float(orcamento_raw)
+            franquia = parse_float(franquia_raw)
+            total_receber = parse_float(total_receber_raw)
         except ValueError:
             flash("Informe valores v\u00e1lidos para pe\u00e7as e m\u00e3o de obra.", "danger")
-            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO)
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
 
-        if valor_pecas < 0 or valor_mao_obra < 0:
+        if min(valor_pecas, valor_mao_obra, custo_pecas, orcamento, franquia, total_receber) < 0:
             flash("Os valores de pe\u00e7as e m\u00e3o de obra n\u00e3o podem ser negativos.", "danger")
-            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO)
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
 
         if OS.query.filter_by(numero_os=numero_os).first():
             flash("J\u00e1 existe uma OS com esse n\u00famero.", "danger")
-            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO)
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
 
         nova = OS(
             numero_os=numero_os,
             cliente=cliente,
             placa=placa,
             seguradora=seguradora,
+            carro_modelo=carro_modelo,
+            custo_pecas=custo_pecas,
+            orcamento=orcamento,
+            franquia=franquia,
+            veiculo_terceiro=veiculo_terceiro,
+            total_receber=total_receber,
             tipo_reparo=tipo_reparo,
             data_entrada=parse_date(request.form.get("data_entrada")),
             data_vistoria=parse_date(request.form.get("data_vistoria")),
@@ -307,10 +363,11 @@ def nova_os():
         )
         db.session.add(nova)
         db.session.commit()
+        save_os_fotos(nova.id)
         flash("Ordem de servi\u00e7o criada.", "success")
         return redirect(url_for("listar_os"))
 
-    return render_template("nova_os.html", form_data={}, tipos_reparo=TIPOS_REPARO)
+    return render_template("nova_os.html", form_data={}, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
 
 
 @app.route("/listar_os")
@@ -359,6 +416,12 @@ def editar_os(id):
         os_item.cliente = request.form.get("cliente", "").strip()
         os_item.placa = request.form.get("placa", "").strip().upper()
         os_item.seguradora = request.form.get("seguradora", "").strip()
+        os_item.carro_modelo = request.form.get("carro_modelo", "").strip()
+        os_item.custo_pecas = parse_float(request.form.get("custo_pecas"))
+        os_item.orcamento = parse_float(request.form.get("orcamento"))
+        os_item.franquia = parse_float(request.form.get("franquia"))
+        os_item.veiculo_terceiro = request.form.get("veiculo_terceiro") == "sim"
+        os_item.total_receber = parse_float(request.form.get("total_receber"))
         os_item.tipo_reparo = request.form.get("tipo_reparo", "").strip()
         os_item.data_entrada = parse_date(request.form.get("data_entrada"))
         os_item.data_vistoria = parse_date(request.form.get("data_vistoria"))
@@ -366,14 +429,15 @@ def editar_os(id):
         os_item.data_inicio_reparo = parse_date(request.form.get("data_inicio_reparo"))
         os_item.previsao_entrega = parse_date(request.form.get("previsao_entrega"))
         os_item.data_pagamento = parse_date(request.form.get("data_pagamento"))
-        os_item.valor_pecas = float(request.form.get("valor_pecas") or 0)
-        os_item.valor_mao_obra = float(request.form.get("valor_mao_obra") or 0)
+        os_item.valor_pecas = parse_float(request.form.get("valor_pecas"))
+        os_item.valor_mao_obra = parse_float(request.form.get("valor_mao_obra"))
         os_item.status = request.form.get("status", os_item.status)
         db.session.commit()
+        save_os_fotos(os_item.id)
         flash("Ordem de servi\u00e7o atualizada.", "success")
         return redirect(url_for("listar_os"))
 
-    return render_template("editar_os.html", os=os_item, status_flow=STATUS_FLOW, tipos_reparo=TIPOS_REPARO)
+    return render_template("editar_os.html", os=os_item, status_flow=STATUS_FLOW, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
 
 
 @app.route("/excluir_os/<int:id>")
@@ -542,6 +606,24 @@ def excluir_para_brisa(id):
     db.session.commit()
     flash("Para-brisa removido do estoque.", "success")
     return redirect(url_for("para_brisas"))
+
+
+@app.route("/os_foto/<int:id>")
+@login_required
+def os_foto(id):
+    foto = OSFoto.query.get_or_404(id)
+    return Response(foto.data, mimetype=foto.content_type or "image/jpeg")
+
+
+@app.route("/os_foto/excluir/<int:id>")
+@admin_required
+def excluir_os_foto(id):
+    foto = OSFoto.query.get_or_404(id)
+    os_id = foto.os_id
+    db.session.delete(foto)
+    db.session.commit()
+    flash("Foto removida da OS.", "success")
+    return redirect(url_for("editar_os", id=os_id))
 
 
 if __name__ == "__main__":

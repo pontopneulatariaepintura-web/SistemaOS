@@ -17,6 +17,12 @@ class OS(db.Model):
     cliente = db.Column(db.String(120))
     placa = db.Column(db.String(20))
     seguradora = db.Column(db.String(120))
+    carro_modelo = db.Column(db.String(120))
+    custo_pecas = db.Column(db.Float, default=0)
+    orcamento = db.Column(db.Float, default=0)
+    franquia = db.Column(db.Float, default=0)
+    veiculo_terceiro = db.Column(db.Boolean, default=False)
+    total_receber = db.Column(db.Float, default=0)
     tipo_reparo = db.Column(db.String(60))
     status = db.Column(db.String(30), default="CRIADA")
     data_entrada = db.Column(db.Date)
@@ -30,6 +36,17 @@ class OS(db.Model):
     criado_por = db.Column(db.String(80))
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     ultima_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+
+class OSFoto(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    os_id = db.Column(db.Integer, db.ForeignKey("os.id"), nullable=False)
+    filename = db.Column(db.String(255))
+    content_type = db.Column(db.String(80), default="image/jpeg")
+    data = db.Column(db.LargeBinary, nullable=False)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+
+    os = db.relationship("OS", backref=db.backref("fotos", lazy=True, cascade="all, delete-orphan"))
 
 
 class EstoquePeca(db.Model):
@@ -80,7 +97,7 @@ class EstoqueParaBrisa(db.Model):
         elif self.ano_inicial:
             partes.append(f"a partir de {self.ano_inicial}")
         elif self.ano_final:
-            partes.append(f"at&eacute; {self.ano_final}")
+            partes.append(f"ate {self.ano_final}")
         return " - ".join(partes)
 
     @property

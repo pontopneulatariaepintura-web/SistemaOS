@@ -10,11 +10,13 @@
     <h2>OS #{{ os.numero_os }}</h2>
     <span class="status {{ os.status }}">{{ os.status }}</span>
     <p><b>Criado por:</b> {{ os.criado_por or '-' }}</p>
-    <p><b>Cliente:</b> {{ os.cliente or '-' }} | <b>Placa:</b> {{ os.placa or '-' }} | <b>Seguradora:</b> {{ os.seguradora or '-' }}</p>
-    <p><b>Tipo de reparo:</b> {{ os.tipo_reparo or '-' }}</p>
+    <p><b>Cliente:</b> {{ os.cliente or '-' }} | <b>Carro/modelo:</b> {{ os.carro_modelo or '-' }} | <b>Placa:</b> {{ os.placa or '-' }} | <b>Seguradora:</b> {{ os.seguradora or '-' }}</p>
+    <p><b>Tipo de reparo:</b> {{ os.tipo_reparo or '-' }} | <b>Ve&iacute;culo de terceiro:</b> {% if os.veiculo_terceiro %}Sim{% else %}N&atilde;o{% endif %}</p>
     <p><b>Entrada:</b> {{ os.data_entrada or '-' }} | <b>Vistoria:</b> {{ os.data_vistoria or '-' }} | <b>Libera&ccedil;&atilde;o:</b> {{ os.data_liberacao_vistoria or '-' }}</p>
     <p><b>Reparo:</b> {{ os.data_inicio_reparo or '-' }} | <b>Previs&atilde;o:</b> {{ os.previsao_entrega or '-' }} | <b>Pagamento:</b> {{ os.data_pagamento or '-' }}</p>
-    <p><b>Pe&ccedil;as:</b> R$ {{ "%.2f"|format(os.valor_pecas or 0) }} | <b>M&atilde;o de obra:</b> R$ {{ "%.2f"|format(os.valor_mao_obra or 0) }} | <b>Total:</b> R$ {{ "%.2f"|format((os.valor_pecas or 0) + (os.valor_mao_obra or 0)) }}</p>
+    <p><b>Pe&ccedil;as:</b> R$ {{ "%.2f"|format(os.valor_pecas or 0) }} | <b>M&atilde;o de obra:</b> R$ {{ "%.2f"|format(os.valor_mao_obra or 0) }} | <b>Custo pe&ccedil;as:</b> R$ {{ "%.2f"|format(os.custo_pecas or 0) }} | <b>Or&ccedil;amento:</b> R$ {{ "%.2f"|format(os.orcamento or 0) }}</p>
+    <p><b>Franquia:</b> R$ {{ "%.2f"|format(os.franquia or 0) }} | <b>Total a receber:</b> R$ {{ "%.2f"|format(os.total_receber or 0) }} | <b>Total OS:</b> R$ {{ "%.2f"|format((os.valor_pecas or 0) + (os.valor_mao_obra or 0)) }}</p>
+    {% if os.fotos %}<div class="photo-strip">{% for foto in os.fotos[:4] %}<img src="{{ url_for('os_foto', id=foto.id) }}" alt="Foto da OS {{ os.numero_os }}">{% endfor %}</div>{% endif %}
     <div class="actions">
         {% if os.status != "FINALIZADA" %}<a class="btn btn-success" href="{{ url_for('avancar', id=os.id) }}">Avan&ccedil;ar etapa</a>{% endif %}
         <a class="btn btn-primary" href="{{ url_for('editar_os', id=os.id) }}">Editar</a>
