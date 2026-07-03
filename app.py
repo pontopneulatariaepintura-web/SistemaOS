@@ -28,7 +28,7 @@ db.init_app(app)
 
 STATUS_FLOW = ["CRIADA", "VISTORIA", "LIBERADA", "REPARO", "FINALIZADA"]
 TIPOS_REPARO = ["Pequenos reparos", "Troca de pneu/roda", "Lataria e Pintura", "Parabrisa"]
-SEGURADORAS = ["Porto Seguro", "Tokio", "HDI", "Yellum", "Mapfr", "Zurich", "MaxPar Car Glass", "Alura", "Allianz", "Youse", "Suhai", "Bradesco", "Itau", "Mithsui", "Santander", "Sura", "Loovi", "Conecta", "Pioneira", "Alfa", "Guara", "Potencia BR"]
+SEGURADORAS = ["Porto Seguro", "Tokio", "HDI", "Yellum", "Mapfr", "Zurich", "MaxPar", "Car Glass", "Alura", "Allianz", "Youse", "Suhai", "Bradesco", "Itau", "Mithsui", "Santander", "Sura", "Loovi", "Conecta", "Pioneira", "Alfa", "Guara", "Potencia BR"]
 
 
 def parse_date(valor):
