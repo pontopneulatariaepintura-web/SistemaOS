@@ -2,6 +2,22 @@
 {% block title %}Dashboard{% endblock %}
 {% block content %}
 <h1>Dashboard</h1>
+{% if prazo_alertas %}
+<div class="panel prazo-alertas">
+    <h2>Avisos de prazo</h2>
+    <div class="prazo-lista">
+        {% for alerta in prazo_alertas %}
+        <a class="prazo-item prazo-{{ alerta.classe }}" href="{{ url_for('editar_os', id=alerta.os.id) }}">
+            <div>
+                <b>{{ alerta.tipo }}</b> da OS #{{ alerta.os.numero_os }} - {{ alerta.os.cliente or 'Cliente n&atilde;o informado' }}
+                <small>{{ alerta.os.placa or '-' }} | {{ alerta.os.status }}</small>
+            </div>
+            <span>{{ alerta.prazo.strftime('%d/%m/%Y') }} - {{ alerta.situacao }}</span>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 <div class="grid">
     <a class="card metric-card metric-total" href="{{ url_for('listar_os') }}"><h3>Total de OS em andamento</h3><div class="numero">{{ total_os - finalizadas }}</div></a>
     <a class="card metric-card metric-criadas" href="{{ url_for('listar_os', status='CRIADA') }}"><h3>Criadas</h3><div class="numero">{{ criadas }}</div></a>

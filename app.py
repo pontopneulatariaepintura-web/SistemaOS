@@ -68,6 +68,51 @@ def save_os_fotos(os_id):
     db.session.commit()
 
 
+def montar_alertas_prazo():
+    hoje = datetime.now().date()
+    limite = hoje + timedelta(days=2)
+    campos = [
+        ("Vistoria", "data_vistoria"),
+        ("Reparo", "data_inicio_reparo"),
+        ("Previsão de entrega", "previsao_entrega"),
+    ]
+    alertas = []
+
+    ordens = OS.query.filter(OS.status != "FINALIZADA").all()
+    for os_item in ordens:
+        for titulo, campo in campos:
+            prazo = getattr(os_item, campo)
+            if not prazo or prazo > limite:
+                continue
+
+            dias = (prazo - hoje).days
+            if dias < 0:
+                situacao = f"vencido há {abs(dias)} dia(s)"
+                classe = "danger"
+            elif dias == 0:
+                situacao = "vence hoje"
+                classe = "danger"
+            elif dias == 1:
+                situacao = "vence amanhã"
+                classe = "warning"
+            else:
+                situacao = f"vence em {dias} dias"
+                classe = "warning"
+
+            alertas.append(
+                {
+                    "os": os_item,
+                    "tipo": titulo,
+                    "prazo": prazo,
+                    "dias": dias,
+                    "situacao": situacao,
+                    "classe": classe,
+                }
+            )
+
+    return sorted(alertas, key=lambda item: (item["prazo"], item["os"].numero_os or ""))
+
+
 def ensure_os_columns():
     inspector = inspect(db.engine)
     existing = {column["name"] for column in inspector.get_columns("os")}
@@ -219,6 +264,7 @@ def dashboard():
     para_brisas_baixo = EstoqueParaBrisa.query.filter(
         EstoqueParaBrisa.quantidade <= EstoqueParaBrisa.estoque_minimo
     ).count()
+    prazo_alertas = montar_alertas_prazo()
 
     return render_template(
         "dashboard.html",
@@ -235,6 +281,7 @@ def dashboard():
         estoque_baixo=estoque_baixo,
         total_para_brisas=total_para_brisas,
         para_brisas_baixo=para_brisas_baixo,
+        prazo_alertas=prazo_alertas,
     )
 
 
