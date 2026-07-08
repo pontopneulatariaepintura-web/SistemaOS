@@ -20,6 +20,7 @@
     <div class="actions">
         {% if os.status != "FINALIZADA" %}<a class="btn btn-success" href="{{ url_for('avancar', id=os.id) }}">Avan&ccedil;ar etapa</a>{% endif %}
         <a class="btn btn-primary" href="{{ url_for('editar_os', id=os.id) }}">Editar</a>
+        <a class="btn btn-muted" href="{{ url_for('imprimir_os', id=os.id) }}" target="_blank" rel="noopener">Imprimir</a>
         {% if perfil_logado == 'admin' %}<a class="btn btn-danger" href="{{ url_for('excluir_os', id=os.id) }}" onclick="return confirm('Deseja excluir esta OS?')">Excluir</a>{% endif %}
     </div>
 </div>

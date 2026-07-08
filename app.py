@@ -490,6 +490,13 @@ def editar_os(id):
     return render_template("editar_os.html", os=os_item, status_flow=STATUS_FLOW, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
 
 
+@app.route("/imprimir_os/<int:id>")
+@login_required
+def imprimir_os(id):
+    os_item = OS.query.get_or_404(id)
+    return render_template("imprimir_os.html", os=os_item)
+
+
 @app.route("/excluir_os/<int:id>")
 @admin_required
 def excluir_os(id):

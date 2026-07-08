@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imprimir OS {{ os.numero_os }}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111827; background: #e5e7eb; }
+        .toolbar { display: flex; justify-content: center; gap: 10px; padding: 16px; background: #111827; position: sticky; top: 0; z-index: 2; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 9px 14px; border-radius: 7px; border: 0; text-decoration: none; color: white; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-primary { background: #2563eb; }
+        .btn-muted { background: #6b7280; }
+        .page { width: 210mm; min-height: 297mm; margin: 16px auto; padding: 14mm; background: white; box-shadow: 0 8px 30px rgba(0,0,0,.18); }
+        .header { display: flex; justify-content: space-between; align-items: center; gap: 20px; border-bottom: 3px solid #111827; padding-bottom: 14px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .logo { width: 72px; height: 72px; object-fit: contain; border: 1px solid #e5e7eb; border-radius: 50%; padding: 4px; }
+        h1, h2, h3, p { margin: 0; }
+        h1 { font-size: 24px; }
+        .subtitle { color: #4b5563; margin-top: 4px; font-size: 13px; }
+        .os-number { text-align: right; }
+        .os-number strong { display: block; font-size: 28px; color: #111827; }
+        .status { display: inline-block; margin-top: 6px; padding: 6px 10px; border-radius: 7px; color: white; font-weight: bold; font-size: 12px; background: #2563eb; }
+        .FINALIZADA { background: #16a34a; }
+        .REPARO { background: #dc2626; }
+        .LIBERADA { background: #7c3aed; }
+        .VISTORIA { background: #2563eb; }
+        .CRIADA { background: #d97706; }
+        .section { margin-top: 18px; page-break-inside: avoid; }
+        .section h2 { font-size: 16px; border-bottom: 1px solid #d1d5db; padding-bottom: 6px; margin-bottom: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1px solid #d1d5db; border-bottom: 0; border-right: 0; }
+        .field { min-height: 48px; padding: 8px 10px; border-right: 1px solid #d1d5db; border-bottom: 1px solid #d1d5db; }
+        .label { display: block; color: #4b5563; font-size: 11px; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
+        .value { font-size: 15px; font-weight: bold; word-break: break-word; }
+        .totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+        .total-card { border: 1px solid #111827; padding: 10px; min-height: 58px; }
+        .total-card strong { display: block; margin-top: 5px; font-size: 17px; }
+        .photos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+        .photos img { width: 100%; height: 185px; object-fit: cover; border: 1px solid #d1d5db; border-radius: 4px; }
+        .signature-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 28px; margin-top: 42px; }
+        .signature { border-top: 1px solid #111827; text-align: center; padding-top: 8px; font-size: 13px; }
+        @page { size: A4; margin: 10mm; }
+        @media print {
+            body { background: white; }
+            .toolbar { display: none; }
+            .page { width: auto; min-height: auto; margin: 0; padding: 0; box-shadow: none; }
+            .photos img { height: 150px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button class="btn btn-primary" onclick="window.print()">Imprimir</button>
+        <a class="btn btn-muted" href="{{ url_for('editar_os', id=os.id) }}">Voltar para OS</a>
+    </div>
+
+    <main class="page">
+        <header class="header">
+            <div class="brand">
+                <img class="logo" src="{{ url_for('static', filename='logo-ponto-pneu.png') }}" alt="Ponto Do Pneu Auto Center">
+                <div>
+                    <h1>Ponto Do Pneu Auto Center</h1>
+                    <p class="subtitle">Ordem de servi&ccedil;o</p>
+                </div>
+            </div>
+            <div class="os-number">
+                <span>OS</span>
+                <strong>#{{ os.numero_os }}</strong>
+                <span class="status {{ os.status }}">{{ os.status }}</span>
+            </div>
+        </header>
+
+        <section class="section">
+            <h2>Dados do ve&iacute;culo e cliente</h2>
+            <div class="grid">
+                <div class="field"><span class="label">Cliente</span><span class="value">{{ os.cliente or '-' }}</span></div>
+                <div class="field"><span class="label">Placa</span><span class="value">{{ os.placa or '-' }}</span></div>
+                <div class="field"><span class="label">Carro/modelo</span><span class="value">{{ os.carro_modelo or '-' }}</span></div>
+                <div class="field"><span class="label">Seguradora</span><span class="value">{{ os.seguradora or '-' }}</span></div>
+                <div class="field"><span class="label">Tipo de reparo</span><span class="value">{{ os.tipo_reparo or '-' }}</span></div>
+                <div class="field"><span class="label">Ve&iacute;culo de terceiro?</span><span class="value">{% if os.veiculo_terceiro %}Sim{% else %}N&atilde;o{% endif %}</span></div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Prazos</h2>
+            <div class="grid">
+                <div class="field"><span class="label">Entrada</span><span class="value">{{ os.data_entrada.strftime('%d/%m/%Y') if os.data_entrada else '-' }}</span></div>
+                <div class="field"><span class="label">Vistoria</span><span class="value">{{ os.data_vistoria.strftime('%d/%m/%Y') if os.data_vistoria else '-' }}</span></div>
+                <div class="field"><span class="label">Libera&ccedil;&atilde;o da vistoria</span><span class="value">{{ os.data_liberacao_vistoria.strftime('%d/%m/%Y') if os.data_liberacao_vistoria else '-' }}</span></div>
+                <div class="field"><span class="label">In&iacute;cio do reparo</span><span class="value">{{ os.data_inicio_reparo.strftime('%d/%m/%Y') if os.data_inicio_reparo else '-' }}</span></div>
+                <div class="field"><span class="label">Previs&atilde;o de entrega</span><span class="value">{{ os.previsao_entrega.strftime('%d/%m/%Y') if os.previsao_entrega else '-' }}</span></div>
+                <div class="field"><span class="label">Pagamento</span><span class="value">{{ os.data_pagamento.strftime('%d/%m/%Y') if os.data_pagamento else '-' }}</span></div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Valores</h2>
+            <div class="totals">
+                <div class="total-card"><span class="label">Valor de pe&ccedil;as</span><strong>R$ {{ '%.2f'|format(os.valor_pecas or 0) }}</strong></div>
+                <div class="total-card"><span class="label">M&atilde;o de obra</span><strong>R$ {{ '%.2f'|format(os.valor_mao_obra or 0) }}</strong></div>
+                <div class="total-card"><span class="label">Total OS</span><strong>R$ {{ '%.2f'|format((os.valor_pecas or 0) + (os.valor_mao_obra or 0)) }}</strong></div>
+                <div class="total-card"><span class="label">Custo de pe&ccedil;as</span><strong>R$ {{ '%.2f'|format(os.custo_pecas or 0) }}</strong></div>
+                <div class="total-card"><span class="label">Or&ccedil;amento</span><strong>R$ {{ '%.2f'|format(os.orcamento or 0) }}</strong></div>
+                <div class="total-card"><span class="label">Franquia</span><strong>R$ {{ '%.2f'|format(os.franquia or 0) }}</strong></div>
+                <div class="total-card"><span class="label">Total a receber</span><strong>R$ {{ '%.2f'|format(os.total_receber or 0) }}</strong></div>
+            </div>
+        </section>
+
+        {% if os.fotos %}
+        <section class="section">
+            <h2>Fotos do ve&iacute;culo</h2>
+            <div class="photos">
+                {% for foto in os.fotos %}
+                <img src="{{ url_for('os_foto', id=foto.id) }}" alt="Foto da OS {{ os.numero_os }}">
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="signature-row">
+            <div class="signature">Assinatura do cliente</div>
+            <div class="signature">Respons&aacute;vel pela oficina</div>
+        </section>
+    </main>
+</body>
+</html>
