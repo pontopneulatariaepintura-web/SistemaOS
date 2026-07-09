@@ -7,7 +7,7 @@ from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from extensions import db
-from models import EstoqueParaBrisa, EstoquePeca, OS, OSFoto, User
+from models import EstoqueParaBrisa, EstoquePeca, FechamentoFinanceiro, FechamentoFinanceiroItem, OS, OSFoto, User
 
 app = Flask(__name__)
 
@@ -131,6 +131,7 @@ def ensure_os_columns():
         "total_receber": "FLOAT",
         "data_criacao": "TIMESTAMP" if dialect == "postgresql" else "DATETIME",
         "ultima_atualizacao": "TIMESTAMP" if dialect == "postgresql" else "DATETIME",
+        "fechamento_id": "INTEGER",
     }
 
     for column_name, column_type in column_sql.items():
@@ -256,9 +257,8 @@ def dashboard():
     reparo = OS.query.filter_by(status="REPARO").count()
     finalizadas = OS.query.filter_by(status="FINALIZADA").count()
 
-    ordens = OS.query.all()
-    valor_pecas = sum(item.valor_pecas or 0 for item in ordens)
-    valor_mao_obra = sum(item.valor_mao_obra or 0 for item in ordens)
+    ordens_financeiro = OS.query.filter(OS.fechamento_id.is_(None)).all()
+    financeiro_aberto = sum((item.valor_pecas or 0) + (item.valor_mao_obra or 0) for item in ordens_financeiro)
 
     total_itens_estoque = EstoquePeca.query.count()
     valor_estoque = sum((peca.quantidade or 0) * (peca.valor_unitario or 0) for peca in EstoquePeca.query.all())
@@ -277,8 +277,7 @@ def dashboard():
         liberadas=liberadas,
         reparo=reparo,
         finalizadas=finalizadas,
-        valor_pecas=valor_pecas,
-        valor_mao_obra=valor_mao_obra,
+        financeiro_aberto=financeiro_aberto,
         total_itens_estoque=total_itens_estoque,
         valor_estoque=valor_estoque,
         estoque_baixo=estoque_baixo,
@@ -286,6 +285,81 @@ def dashboard():
         para_brisas_baixo=para_brisas_baixo,
         prazo_alertas=prazo_alertas,
     )
+
+
+@app.route("/financeiro")
+@login_required
+def financeiro():
+    ordens = OS.query.filter(OS.fechamento_id.is_(None)).order_by(OS.id.desc()).all()
+    totais = {
+        "quantidade": len(ordens),
+        "pecas": sum(item.valor_pecas or 0 for item in ordens),
+        "mao_obra": sum(item.valor_mao_obra or 0 for item in ordens),
+        "custo_pecas": sum(item.custo_pecas or 0 for item in ordens),
+        "orcamento": sum(item.orcamento or 0 for item in ordens),
+        "franquia": sum(item.franquia or 0 for item in ordens),
+        "receber": sum(item.total_receber or 0 for item in ordens),
+    }
+    totais["total_os"] = totais["pecas"] + totais["mao_obra"]
+    fechamentos = FechamentoFinanceiro.query.order_by(FechamentoFinanceiro.id.desc()).all()
+    return render_template("financeiro.html", ordens=ordens, totais=totais, fechamentos=fechamentos)
+
+
+@app.route("/financeiro/fechar", methods=["POST"])
+@admin_required
+def fechar_financeiro():
+    ordens = OS.query.filter(OS.fechamento_id.is_(None)).order_by(OS.id.asc()).all()
+    if not ordens:
+        flash("Não há valores em aberto para fechar.", "warning")
+        return redirect(url_for("financeiro"))
+
+    fechamento = FechamentoFinanceiro(
+        criado_por=session.get("username"),
+        quantidade_os=len(ordens),
+        total_pecas=sum(item.valor_pecas or 0 for item in ordens),
+        total_mao_obra=sum(item.valor_mao_obra or 0 for item in ordens),
+        total_custo_pecas=sum(item.custo_pecas or 0 for item in ordens),
+        total_orcamento=sum(item.orcamento or 0 for item in ordens),
+        total_franquia=sum(item.franquia or 0 for item in ordens),
+        total_receber=sum(item.total_receber or 0 for item in ordens),
+    )
+    fechamento.total_os = fechamento.total_pecas + fechamento.total_mao_obra
+    db.session.add(fechamento)
+    db.session.flush()
+
+    for os_item in ordens:
+        db.session.add(
+            FechamentoFinanceiroItem(
+                fechamento_id=fechamento.id,
+                os_id=os_item.id,
+                numero_os=os_item.numero_os,
+                cliente=os_item.cliente,
+                placa=os_item.placa,
+                seguradora=os_item.seguradora,
+                status=os_item.status,
+                valor_pecas=os_item.valor_pecas or 0,
+                valor_mao_obra=os_item.valor_mao_obra or 0,
+                custo_pecas=os_item.custo_pecas or 0,
+                orcamento=os_item.orcamento or 0,
+                franquia=os_item.franquia or 0,
+                total_receber=os_item.total_receber or 0,
+            )
+        )
+        os_item.fechamento_id = fechamento.id
+
+    db.session.commit()
+    flash("Fechamento financeiro gerado. O financeiro em aberto foi zerado.", "success")
+    return redirect(url_for("relatorio_financeiro", id=fechamento.id))
+
+
+@app.route("/financeiro/relatorio/<int:id>")
+@login_required
+def relatorio_financeiro(id):
+    fechamento = FechamentoFinanceiro.query.get_or_404(id)
+    itens = FechamentoFinanceiroItem.query.filter_by(fechamento_id=fechamento.id).order_by(
+        FechamentoFinanceiroItem.id.asc()
+    ).all()
+    return render_template("relatorio_financeiro.html", fechamento=fechamento, itens=itens)
 
 
 @app.route("/usuarios")

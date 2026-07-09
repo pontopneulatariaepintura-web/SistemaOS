@@ -36,6 +36,40 @@ class OS(db.Model):
     criado_por = db.Column(db.String(80))
     data_criacao = db.Column(db.DateTime, default=datetime.utcnow)
     ultima_atualizacao = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    fechamento_id = db.Column(db.Integer, db.ForeignKey("fechamento_financeiro.id"))
+
+
+class FechamentoFinanceiro(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+    criado_por = db.Column(db.String(80))
+    quantidade_os = db.Column(db.Integer, default=0)
+    total_pecas = db.Column(db.Float, default=0)
+    total_mao_obra = db.Column(db.Float, default=0)
+    total_os = db.Column(db.Float, default=0)
+    total_custo_pecas = db.Column(db.Float, default=0)
+    total_orcamento = db.Column(db.Float, default=0)
+    total_franquia = db.Column(db.Float, default=0)
+    total_receber = db.Column(db.Float, default=0)
+
+
+class FechamentoFinanceiroItem(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    fechamento_id = db.Column(db.Integer, db.ForeignKey("fechamento_financeiro.id"), nullable=False)
+    os_id = db.Column(db.Integer)
+    numero_os = db.Column(db.String(20))
+    cliente = db.Column(db.String(120))
+    placa = db.Column(db.String(20))
+    seguradora = db.Column(db.String(120))
+    status = db.Column(db.String(30))
+    valor_pecas = db.Column(db.Float, default=0)
+    valor_mao_obra = db.Column(db.Float, default=0)
+    custo_pecas = db.Column(db.Float, default=0)
+    orcamento = db.Column(db.Float, default=0)
+    franquia = db.Column(db.Float, default=0)
+    total_receber = db.Column(db.Float, default=0)
+
+    fechamento = db.relationship("FechamentoFinanceiro", backref=db.backref("itens", lazy=True, cascade="all, delete-orphan"))
 
 
 class OSFoto(db.Model):

@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relat&oacute;rio financeiro #{{ fechamento.id }}</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #111827; background: #e5e7eb; }
+        .toolbar { display: flex; justify-content: center; gap: 10px; padding: 16px; background: #111827; position: sticky; top: 0; z-index: 2; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; min-height: 38px; padding: 9px 14px; border-radius: 7px; border: 0; text-decoration: none; color: white; font-weight: bold; cursor: pointer; font-size: 14px; }
+        .btn-primary { background: #2563eb; }
+        .btn-muted { background: #6b7280; }
+        .page { width: 210mm; min-height: 297mm; margin: 16px auto; padding: 14mm; background: white; box-shadow: 0 8px 30px rgba(0,0,0,.18); }
+        .header { display: flex; justify-content: space-between; align-items: center; gap: 20px; border-bottom: 3px solid #111827; padding-bottom: 14px; margin-bottom: 18px; }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .logo { width: 72px; height: 72px; object-fit: contain; border: 1px solid #e5e7eb; border-radius: 50%; padding: 4px; }
+        h1, h2, p { margin: 0; }
+        h1 { font-size: 23px; }
+        h2 { font-size: 16px; margin: 18px 0 10px; border-bottom: 1px solid #d1d5db; padding-bottom: 6px; }
+        .subtitle { color: #4b5563; margin-top: 4px; font-size: 13px; }
+        .report-number { text-align: right; }
+        .report-number strong { display: block; font-size: 28px; }
+        .totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 18px; }
+        .total-card { border: 1px solid #111827; padding: 10px; min-height: 58px; }
+        .label { display: block; color: #4b5563; font-size: 11px; text-transform: uppercase; font-weight: bold; margin-bottom: 4px; }
+        .total-card strong { display: block; margin-top: 5px; font-size: 17px; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; }
+        th, td { padding: 7px; border: 1px solid #d1d5db; text-align: left; vertical-align: top; }
+        th { background: #111827; color: white; }
+        @page { size: A4; margin: 10mm; }
+        @media print {
+            body { background: white; }
+            .toolbar { display: none; }
+            .page { width: auto; min-height: auto; margin: 0; padding: 0; box-shadow: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="toolbar">
+        <button class="btn btn-primary" onclick="window.print()">Imprimir relat&oacute;rio</button>
+        <a class="btn btn-muted" href="{{ url_for('financeiro') }}">Voltar ao financeiro</a>
+    </div>
+
+    <main class="page">
+        <header class="header">
+            <div class="brand">
+                <img class="logo" src="{{ url_for('static', filename='logo-ponto-pneu.png') }}" alt="Ponto Do Pneu Auto Center">
+                <div>
+                    <h1>Ponto Do Pneu Auto Center</h1>
+                    <p class="subtitle">Relat&oacute;rio de fechamento financeiro</p>
+                    <p class="subtitle">Gerado em {{ fechamento.criado_em.strftime('%d/%m/%Y %H:%M') if fechamento.criado_em else '-' }} por {{ fechamento.criado_por or '-' }}</p>
+                </div>
+            </div>
+            <div class="report-number">
+                <span>Fechamento</span>
+                <strong>#{{ fechamento.id }}</strong>
+            </div>
+        </header>
+
+        <section class="totals">
+            <div class="total-card"><span class="label">Qtd. OS</span><strong>{{ fechamento.quantidade_os }}</strong></div>
+            <div class="total-card"><span class="label">Pe&ccedil;as</span><strong>R$ {{ "%.2f"|format(fechamento.total_pecas or 0) }}</strong></div>
+            <div class="total-card"><span class="label">M&atilde;o de obra</span><strong>R$ {{ "%.2f"|format(fechamento.total_mao_obra or 0) }}</strong></div>
+            <div class="total-card"><span class="label">Total OS</span><strong>R$ {{ "%.2f"|format(fechamento.total_os or 0) }}</strong></div>
+            <div class="total-card"><span class="label">Custo pe&ccedil;as</span><strong>R$ {{ "%.2f"|format(fechamento.total_custo_pecas or 0) }}</strong></div>
+            <div class="total-card"><span class="label">Total a receber</span><strong>R$ {{ "%.2f"|format(fechamento.total_receber or 0) }}</strong></div>
+            <div class="total-card"><span class="label">Or&ccedil;amento</span><strong>R$ {{ "%.2f"|format(fechamento.total_orcamento or 0) }}</strong></div>
+            <div class="total-card"><span class="label">Franquia</span><strong>R$ {{ "%.2f"|format(fechamento.total_franquia or 0) }}</strong></div>
+        </section>
+
+        <h2>Ordens inclu&iacute;das</h2>
+        <table>
+            <thead><tr><th>OS</th><th>Cliente</th><th>Placa</th><th>Seguradora</th><th>Status</th><th>Pe&ccedil;as</th><th>M&atilde;o de obra</th><th>Total</th><th>Total receber</th></tr></thead>
+            <tbody>
+                {% for item in itens %}
+                <tr>
+                    <td>#{{ item.numero_os }}</td>
+                    <td>{{ item.cliente or '-' }}</td>
+                    <td>{{ item.placa or '-' }}</td>
+                    <td>{{ item.seguradora or '-' }}</td>
+                    <td>{{ item.status or '-' }}</td>
+                    <td>R$ {{ "%.2f"|format(item.valor_pecas or 0) }}</td>
+                    <td>R$ {{ "%.2f"|format(item.valor_mao_obra or 0) }}</td>
+                    <td>R$ {{ "%.2f"|format((item.valor_pecas or 0) + (item.valor_mao_obra or 0)) }}</td>
+                    <td>R$ {{ "%.2f"|format(item.total_receber or 0) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </main>
+</body>
+</html>
