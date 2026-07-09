@@ -64,14 +64,14 @@
             <div class="total-card"><span class="label">M&atilde;o de obra</span><strong>R$ {{ "%.2f"|format(fechamento.total_mao_obra or 0) }}</strong></div>
             <div class="total-card"><span class="label">Total OS</span><strong>R$ {{ "%.2f"|format(fechamento.total_os or 0) }}</strong></div>
             <div class="total-card"><span class="label">Custo pe&ccedil;as</span><strong>R$ {{ "%.2f"|format(fechamento.total_custo_pecas or 0) }}</strong></div>
-            <div class="total-card"><span class="label">Total a receber</span><strong>R$ {{ "%.2f"|format(fechamento.total_receber or 0) }}</strong></div>
+            <div class="total-card"><span class="label">Total a receber com franquia</span><strong>R$ {{ "%.2f"|format(fechamento.total_receber or 0) }}</strong></div>
             <div class="total-card"><span class="label">Or&ccedil;amento</span><strong>R$ {{ "%.2f"|format(fechamento.total_orcamento or 0) }}</strong></div>
             <div class="total-card"><span class="label">Franquia</span><strong>R$ {{ "%.2f"|format(fechamento.total_franquia or 0) }}</strong></div>
         </section>
 
         <h2>Ordens inclu&iacute;das</h2>
         <table>
-            <thead><tr><th>OS</th><th>Cliente</th><th>Placa</th><th>Seguradora</th><th>Status</th><th>Pe&ccedil;as</th><th>M&atilde;o de obra</th><th>Total</th><th>Total receber</th></tr></thead>
+            <thead><tr><th>OS</th><th>Cliente</th><th>Placa</th><th>Seguradora</th><th>Status</th><th>Pe&ccedil;as</th><th>M&atilde;o de obra</th><th>Total</th><th>Franquia</th><th>Total receber com franquia</th></tr></thead>
             <tbody>
                 {% for item in itens %}
                 <tr>
@@ -83,6 +83,7 @@
                     <td>R$ {{ "%.2f"|format(item.valor_pecas or 0) }}</td>
                     <td>R$ {{ "%.2f"|format(item.valor_mao_obra or 0) }}</td>
                     <td>R$ {{ "%.2f"|format((item.valor_pecas or 0) + (item.valor_mao_obra or 0)) }}</td>
+                    <td>R$ {{ "%.2f"|format(item.franquia or 0) }}</td>
                     <td>R$ {{ "%.2f"|format(item.total_receber or 0) }}</td>
                 </tr>
                 {% endfor %}

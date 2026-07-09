@@ -298,7 +298,7 @@ def financeiro():
         "custo_pecas": sum(item.custo_pecas or 0 for item in ordens),
         "orcamento": sum(item.orcamento or 0 for item in ordens),
         "franquia": sum(item.franquia or 0 for item in ordens),
-        "receber": sum(item.total_receber or 0 for item in ordens),
+        "receber": sum((item.total_receber or 0) + (item.franquia or 0) for item in ordens),
     }
     totais["total_os"] = totais["pecas"] + totais["mao_obra"]
     fechamentos = FechamentoFinanceiro.query.order_by(FechamentoFinanceiro.id.desc()).all()
@@ -321,7 +321,7 @@ def fechar_financeiro():
         total_custo_pecas=sum(item.custo_pecas or 0 for item in ordens),
         total_orcamento=sum(item.orcamento or 0 for item in ordens),
         total_franquia=sum(item.franquia or 0 for item in ordens),
-        total_receber=sum(item.total_receber or 0 for item in ordens),
+        total_receber=sum((item.total_receber or 0) + (item.franquia or 0) for item in ordens),
     )
     fechamento.total_os = fechamento.total_pecas + fechamento.total_mao_obra
     db.session.add(fechamento)
@@ -342,7 +342,7 @@ def fechar_financeiro():
                 custo_pecas=os_item.custo_pecas or 0,
                 orcamento=os_item.orcamento or 0,
                 franquia=os_item.franquia or 0,
-                total_receber=os_item.total_receber or 0,
+                total_receber=(os_item.total_receber or 0) + (os_item.franquia or 0),
             )
         )
         os_item.fechamento_id = fechamento.id
