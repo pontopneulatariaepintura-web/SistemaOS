@@ -45,6 +45,9 @@
         <div><label>Or&ccedil;amento</label><input type="number" step="0.01" min="0" name="orcamento" value="{{ form_data.get('orcamento', '') }}"></div>
         <div><label>Franquia</label><input type="number" step="0.01" min="0" name="franquia" value="{{ form_data.get('franquia', '') }}"></div>
         <div><label>Total a receber</label><input type="number" step="0.01" min="0" name="total_receber" value="{{ form_data.get('total_receber', '') }}"></div>
+        <div><label>Valor negociado</label><input type="number" step="0.01" min="0" name="valor_negociado" value="{{ form_data.get('valor_negociado', '') }}"></div>
+        <div><label>Contrapartida financeira</label><input type="number" step="0.01" min="0" name="contrapartida_financeira" value="{{ form_data.get('contrapartida_financeira', '') }}"></div>
+        <div><label>Faturado para MaxPar</label><input type="number" step="0.01" min="0" name="faturado_maxpar" value="{{ form_data.get('faturado_maxpar', '') }}"></div>
         <div class="full"><label>Fotos do ve&iacute;culo</label><input type="file" name="fotos" accept="image/*" multiple></div>
         <div class="full actions"><button class="btn btn-success" type="submit">Salvar OS</button><a class="btn btn-muted" href="{{ url_for('listar_os') }}">Voltar</a></div>
     </form>

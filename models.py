@@ -23,6 +23,9 @@ class OS(db.Model):
     franquia = db.Column(db.Float, default=0)
     veiculo_terceiro = db.Column(db.Boolean, default=False)
     total_receber = db.Column(db.Float, default=0)
+    valor_negociado = db.Column(db.Float, default=0)
+    contrapartida_financeira = db.Column(db.Float, default=0)
+    faturado_maxpar = db.Column(db.Float, default=0)
     tipo_reparo = db.Column(db.String(60))
     status = db.Column(db.String(30), default="CRIADA")
     data_entrada = db.Column(db.Date)
@@ -51,6 +54,9 @@ class FechamentoFinanceiro(db.Model):
     total_orcamento = db.Column(db.Float, default=0)
     total_franquia = db.Column(db.Float, default=0)
     total_receber = db.Column(db.Float, default=0)
+    total_valor_negociado = db.Column(db.Float, default=0)
+    total_contrapartida_financeira = db.Column(db.Float, default=0)
+    total_faturado_maxpar = db.Column(db.Float, default=0)
 
 
 class FechamentoFinanceiroItem(db.Model):
@@ -68,6 +74,9 @@ class FechamentoFinanceiroItem(db.Model):
     orcamento = db.Column(db.Float, default=0)
     franquia = db.Column(db.Float, default=0)
     total_receber = db.Column(db.Float, default=0)
+    valor_negociado = db.Column(db.Float, default=0)
+    contrapartida_financeira = db.Column(db.Float, default=0)
+    faturado_maxpar = db.Column(db.Float, default=0)
 
     fechamento = db.relationship("FechamentoFinanceiro", backref=db.backref("itens", lazy=True, cascade="all, delete-orphan"))
 

@@ -129,6 +129,9 @@ def ensure_os_columns():
         "franquia": "FLOAT",
         "veiculo_terceiro": "BOOLEAN",
         "total_receber": "FLOAT",
+        "valor_negociado": "FLOAT",
+        "contrapartida_financeira": "FLOAT",
+        "faturado_maxpar": "FLOAT",
         "data_criacao": "TIMESTAMP" if dialect == "postgresql" else "DATETIME",
         "ultima_atualizacao": "TIMESTAMP" if dialect == "postgresql" else "DATETIME",
         "fechamento_id": "INTEGER",
@@ -137,6 +140,23 @@ def ensure_os_columns():
     for column_name, column_type in column_sql.items():
         if column_name not in existing:
             db.session.execute(text(f"ALTER TABLE os ADD COLUMN {column_name} {column_type}"))
+
+    for table_name, columns in {
+        "fechamento_financeiro": {
+            "total_valor_negociado": "FLOAT",
+            "total_contrapartida_financeira": "FLOAT",
+            "total_faturado_maxpar": "FLOAT",
+        },
+        "fechamento_financeiro_item": {
+            "valor_negociado": "FLOAT",
+            "contrapartida_financeira": "FLOAT",
+            "faturado_maxpar": "FLOAT",
+        },
+    }.items():
+        existing_table_columns = {column["name"] for column in inspector.get_columns(table_name)}
+        for column_name, column_type in columns.items():
+            if column_name not in existing_table_columns:
+                db.session.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_type}"))
 
     db.session.commit()
 
@@ -299,6 +319,9 @@ def financeiro():
         "orcamento": sum(item.orcamento or 0 for item in ordens),
         "franquia": sum(item.franquia or 0 for item in ordens),
         "receber": sum((item.total_receber or 0) + (item.franquia or 0) for item in ordens),
+        "valor_negociado": sum(item.valor_negociado or 0 for item in ordens),
+        "contrapartida": sum(item.contrapartida_financeira or 0 for item in ordens),
+        "faturado_maxpar": sum(item.faturado_maxpar or 0 for item in ordens),
     }
     totais["total_os"] = totais["pecas"] + totais["mao_obra"]
     fechamentos = FechamentoFinanceiro.query.order_by(FechamentoFinanceiro.id.desc()).all()
@@ -322,6 +345,9 @@ def fechar_financeiro():
         total_orcamento=sum(item.orcamento or 0 for item in ordens),
         total_franquia=sum(item.franquia or 0 for item in ordens),
         total_receber=sum((item.total_receber or 0) + (item.franquia or 0) for item in ordens),
+        total_valor_negociado=sum(item.valor_negociado or 0 for item in ordens),
+        total_contrapartida_financeira=sum(item.contrapartida_financeira or 0 for item in ordens),
+        total_faturado_maxpar=sum(item.faturado_maxpar or 0 for item in ordens),
     )
     fechamento.total_os = fechamento.total_pecas + fechamento.total_mao_obra
     db.session.add(fechamento)
@@ -343,6 +369,9 @@ def fechar_financeiro():
                 orcamento=os_item.orcamento or 0,
                 franquia=os_item.franquia or 0,
                 total_receber=(os_item.total_receber or 0) + (os_item.franquia or 0),
+                valor_negociado=os_item.valor_negociado or 0,
+                contrapartida_financeira=os_item.contrapartida_financeira or 0,
+                faturado_maxpar=os_item.faturado_maxpar or 0,
             )
         )
         os_item.fechamento_id = fechamento.id
@@ -428,6 +457,9 @@ def nova_os():
         orcamento_raw = request.form.get("orcamento", "").strip()
         franquia_raw = request.form.get("franquia", "").strip()
         total_receber_raw = request.form.get("total_receber", "").strip()
+        valor_negociado_raw = request.form.get("valor_negociado", "").strip()
+        contrapartida_financeira_raw = request.form.get("contrapartida_financeira", "").strip()
+        faturado_maxpar_raw = request.form.get("faturado_maxpar", "").strip()
         veiculo_terceiro = request.form.get("veiculo_terceiro") == "sim"
         form_data = request.form
 
@@ -450,11 +482,14 @@ def nova_os():
             orcamento = parse_float(orcamento_raw)
             franquia = parse_float(franquia_raw)
             total_receber = parse_float(total_receber_raw)
+            valor_negociado = parse_float(valor_negociado_raw)
+            contrapartida_financeira = parse_float(contrapartida_financeira_raw)
+            faturado_maxpar = parse_float(faturado_maxpar_raw)
         except ValueError:
             flash("Informe valores v\u00e1lidos para pe\u00e7as e m\u00e3o de obra.", "danger")
             return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
 
-        if min(valor_pecas, valor_mao_obra, custo_pecas, orcamento, franquia, total_receber) < 0:
+        if min(valor_pecas, valor_mao_obra, custo_pecas, orcamento, franquia, total_receber, valor_negociado, contrapartida_financeira, faturado_maxpar) < 0:
             flash("Os valores de pe\u00e7as e m\u00e3o de obra n\u00e3o podem ser negativos.", "danger")
             return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
 
@@ -473,6 +508,9 @@ def nova_os():
             franquia=franquia,
             veiculo_terceiro=veiculo_terceiro,
             total_receber=total_receber,
+            valor_negociado=valor_negociado,
+            contrapartida_financeira=contrapartida_financeira,
+            faturado_maxpar=faturado_maxpar,
             tipo_reparo=tipo_reparo,
             data_entrada=parse_date(request.form.get("data_entrada")),
             data_vistoria=parse_date(request.form.get("data_vistoria")),
@@ -546,6 +584,9 @@ def editar_os(id):
         os_item.franquia = parse_float(request.form.get("franquia"))
         os_item.veiculo_terceiro = request.form.get("veiculo_terceiro") == "sim"
         os_item.total_receber = parse_float(request.form.get("total_receber"))
+        os_item.valor_negociado = parse_float(request.form.get("valor_negociado"))
+        os_item.contrapartida_financeira = parse_float(request.form.get("contrapartida_financeira"))
+        os_item.faturado_maxpar = parse_float(request.form.get("faturado_maxpar"))
         os_item.tipo_reparo = request.form.get("tipo_reparo", "").strip()
         os_item.data_entrada = parse_date(request.form.get("data_entrada"))
         os_item.data_vistoria = parse_date(request.form.get("data_vistoria"))
