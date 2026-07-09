@@ -3,11 +3,11 @@
 {% block content %}
 <div class="panel">
     <h1>Financeiro</h1>
-    <p>Valores em aberto desde o &uacute;ltimo fechamento.</p>
+    <p>Valores das ordens de servi&ccedil;o em aberto desde o &uacute;ltimo fechamento. O estoque n&atilde;o &eacute; alterado.</p>
     <div class="actions">
         {% if perfil_logado == 'admin' %}
-        <form method="POST" action="{{ url_for('fechar_financeiro') }}" onsubmit="return confirm('Gerar fechamento e zerar o financeiro em aberto?')">
-            <button class="btn btn-success" type="submit">Gerar fechamento e zerar financeiro</button>
+        <form method="POST" action="{{ url_for('fechar_financeiro') }}" onsubmit="return confirm('Gerar fechamento e zerar somente o financeiro das ordens de servi&ccedil;o? O estoque n&atilde;o ser&aacute; alterado.')">
+            <button class="btn btn-success" type="submit">Gerar fechamento e zerar financeiro das OS</button>
         </form>
         {% endif %}
     </div>
@@ -42,7 +42,7 @@
                 <td>R$ {{ "%.2f"|format((os.valor_pecas or 0) + (os.valor_mao_obra or 0)) }}</td>
             </tr>
             {% else %}
-            <tr><td colspan="10">Financeiro zerado. Nenhuma OS em aberto para fechar.</td></tr>
+            <tr><td colspan="10">Financeiro das OS zerado. Nenhuma OS em aberto para fechar.</td></tr>
             {% endfor %}
         </tbody>
     </table>
