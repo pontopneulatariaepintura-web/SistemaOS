@@ -39,6 +39,7 @@
 <body>
     <div class="toolbar">
         <button class="btn btn-primary" onclick="window.print()">Imprimir relat&oacute;rio</button>
+        <a class="btn btn-primary" href="{{ url_for('baixar_relatorio_financeiro_docx', id=fechamento.id) }}">Baixar DOCX</a>
         <a class="btn btn-muted" href="{{ url_for('financeiro') }}">Voltar ao financeiro</a>
     </div>
 

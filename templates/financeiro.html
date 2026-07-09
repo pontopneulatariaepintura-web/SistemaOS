@@ -62,7 +62,7 @@
                 <td>R$ {{ "%.2f"|format(fechamento.total_os or 0) }}</td>
                 <td>R$ {{ "%.2f"|format(fechamento.total_receber or 0) }}</td>
                 <td>R$ {{ "%.2f"|format(fechamento.total_faturado_maxpar or 0) }}</td>
-                <td><a class="btn btn-primary" href="{{ url_for('relatorio_financeiro', id=fechamento.id) }}">Abrir relat&oacute;rio</a></td>
+                <td><a class="btn btn-primary" href="{{ url_for('relatorio_financeiro', id=fechamento.id) }}">Abrir relat&oacute;rio</a><a class="btn btn-muted" href="{{ url_for('baixar_relatorio_financeiro_docx', id=fechamento.id) }}">Baixar DOCX</a></td>
             </tr>
             {% else %}
             <tr><td colspan="7">Nenhum fechamento gerado ainda.</td></tr>

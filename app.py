@@ -1,8 +1,11 @@
 from datetime import timedelta, datetime
 from functools import wraps
+from html import escape
+from io import BytesIO
 import os
+from zipfile import ZIP_DEFLATED, ZipFile
 
-from flask import Flask, Response, abort, flash, redirect, render_template, request, session, url_for
+from flask import Flask, Response, abort, flash, redirect, render_template, request, send_file, session, url_for
 from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -44,6 +47,142 @@ def parse_float(valor):
     if valor in (None, ""):
         return 0
     return float(str(valor).replace(",", "."))
+
+
+def format_brl(valor):
+    return f"R$ {(valor or 0):.2f}"
+
+
+def docx_text(valor):
+    return escape(str(valor if valor not in (None, "") else "-"))
+
+
+def docx_paragraph(texto, bold=False):
+    texto = docx_text(texto)
+    if bold:
+        return f"<w:p><w:r><w:rPr><w:b/></w:rPr><w:t>{texto}</w:t></w:r></w:p>"
+    return f"<w:p><w:r><w:t>{texto}</w:t></w:r></w:p>"
+
+
+def docx_cell(texto, bold=False):
+    return f"<w:tc><w:tcPr><w:tcW w:w=\"2400\" w:type=\"dxa\"/></w:tcPr>{docx_paragraph(texto, bold)}</w:tc>"
+
+
+def docx_row(valores, header=False):
+    return "<w:tr>" + "".join(docx_cell(valor, header) for valor in valores) + "</w:tr>"
+
+
+def docx_table(rows):
+    table_props = (
+        "<w:tblPr><w:tblStyle w:val=\"TableGrid\"/>"
+        "<w:tblW w:w=\"0\" w:type=\"auto\"/>"
+        "<w:tblBorders><w:top w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:left w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:bottom w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:right w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:insideH w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>"
+        "<w:insideV w:val=\"single\" w:sz=\"4\" w:space=\"0\" w:color=\"auto\"/>"
+        "</w:tblBorders></w:tblPr>"
+    )
+    return "<w:tbl>" + table_props + "".join(rows) + "</w:tbl>"
+
+
+def gerar_docx_fechamento(fechamento, itens):
+    criado_em = fechamento.criado_em.strftime("%d/%m/%Y %H:%M") if fechamento.criado_em else "-"
+    partes = [
+        docx_paragraph("Ponto Do Pneu Auto Center", True),
+        docx_paragraph(f"Relatorio de fechamento financeiro #{fechamento.id}", True),
+        docx_paragraph(f"Gerado em {criado_em} por {fechamento.criado_por or '-'}"),
+        docx_paragraph("Resumo", True),
+        docx_table(
+            [
+                docx_row(["Campo", "Valor"], True),
+                docx_row(["Qtd. OS", fechamento.quantidade_os or 0]),
+                docx_row(["Pecas", format_brl(fechamento.total_pecas)]),
+                docx_row(["Mao de obra", format_brl(fechamento.total_mao_obra)]),
+                docx_row(["Total OS", format_brl(fechamento.total_os)]),
+                docx_row(["Custo pecas", format_brl(fechamento.total_custo_pecas)]),
+                docx_row(["Orcamento", format_brl(fechamento.total_orcamento)]),
+                docx_row(["Franquia", format_brl(fechamento.total_franquia)]),
+                docx_row(["Total a receber com franquia", format_brl(fechamento.total_receber)]),
+                docx_row(["Valor negociado", format_brl(fechamento.total_valor_negociado)]),
+                docx_row(["Contrapartida financeira", format_brl(fechamento.total_contrapartida_financeira)]),
+                docx_row(["Faturado para MaxPar", format_brl(fechamento.total_faturado_maxpar)]),
+            ]
+        ),
+        docx_paragraph("Ordens incluidas", True),
+    ]
+
+    rows = [
+        docx_row(
+            [
+                "OS",
+                "Cliente",
+                "Placa",
+                "Seguradora",
+                "Status",
+                "Total OS",
+                "Franquia",
+                "Total receber",
+                "Faturado MaxPar",
+            ],
+            True,
+        )
+    ]
+    for item in itens:
+        rows.append(
+            docx_row(
+                [
+                    f"#{item.numero_os}",
+                    item.cliente or "-",
+                    item.placa or "-",
+                    item.seguradora or "-",
+                    item.status or "-",
+                    format_brl((item.valor_pecas or 0) + (item.valor_mao_obra or 0)),
+                    format_brl(item.franquia),
+                    format_brl(item.total_receber),
+                    format_brl(item.faturado_maxpar),
+                ]
+            )
+        )
+    partes.append(docx_table(rows))
+
+    document_xml = (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main">'
+        "<w:body>"
+        + "".join(partes)
+        + '<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="850" w:bottom="1134" w:left="850"/></w:sectPr>'
+        "</w:body></w:document>"
+    )
+
+    buffer = BytesIO()
+    with ZipFile(buffer, "w", ZIP_DEFLATED) as docx:
+        docx.writestr(
+            "[Content_Types].xml",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            '<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/>'
+            "</Types>",
+        )
+        docx.writestr(
+            "_rels/.rels",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/>'
+            "</Relationships>",
+        )
+        docx.writestr(
+            "word/_rels/document.xml.rels",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"/>',
+        )
+        docx.writestr("word/document.xml", document_xml)
+
+    buffer.seek(0)
+    return buffer
 
 
 def save_os_fotos(os_id):
@@ -377,8 +516,16 @@ def fechar_financeiro():
         os_item.fechamento_id = fechamento.id
 
     db.session.commit()
-    flash("Fechamento financeiro gerado. O financeiro em aberto foi zerado.", "success")
-    return redirect(url_for("relatorio_financeiro", id=fechamento.id))
+    itens = FechamentoFinanceiroItem.query.filter_by(fechamento_id=fechamento.id).order_by(
+        FechamentoFinanceiroItem.id.asc()
+    ).all()
+    arquivo = gerar_docx_fechamento(fechamento, itens)
+    return send_file(
+        arquivo,
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        as_attachment=True,
+        download_name=f"fechamento-financeiro-{fechamento.id}.docx",
+    )
 
 
 @app.route("/financeiro/relatorio/<int:id>")
@@ -389,6 +536,22 @@ def relatorio_financeiro(id):
         FechamentoFinanceiroItem.id.asc()
     ).all()
     return render_template("relatorio_financeiro.html", fechamento=fechamento, itens=itens)
+
+
+@app.route("/financeiro/relatorio/<int:id>/docx")
+@login_required
+def baixar_relatorio_financeiro_docx(id):
+    fechamento = FechamentoFinanceiro.query.get_or_404(id)
+    itens = FechamentoFinanceiroItem.query.filter_by(fechamento_id=fechamento.id).order_by(
+        FechamentoFinanceiroItem.id.asc()
+    ).all()
+    arquivo = gerar_docx_fechamento(fechamento, itens)
+    return send_file(
+        arquivo,
+        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        as_attachment=True,
+        download_name=f"fechamento-financeiro-{fechamento.id}.docx",
+    )
 
 
 @app.route("/usuarios")
