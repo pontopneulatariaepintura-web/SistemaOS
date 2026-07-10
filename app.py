@@ -609,7 +609,7 @@ def dashboard():
     finalizadas = OS.query.filter_by(status="FINALIZADA").count()
 
     ordens_financeiro = OS.query.filter(OS.fechamento_id.is_(None)).all()
-    financeiro_aberto = sum((item.valor_pecas or 0) + (item.valor_mao_obra or 0) for item in ordens_financeiro)
+    financeiro_aberto = sum(valor_total_os(item) for item in ordens_financeiro)
 
     total_itens_estoque = EstoquePeca.query.count()
     valor_estoque = sum((peca.quantidade or 0) * (peca.valor_unitario or 0) for peca in EstoquePeca.query.all())
