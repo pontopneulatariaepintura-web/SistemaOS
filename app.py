@@ -95,6 +95,165 @@ def docx_table(rows):
     return "<w:tbl>" + table_props + "".join(rows) + "</w:tbl>"
 
 
+
+def excel_col(numero):
+    nome = ""
+    while numero:
+        numero, resto = divmod(numero - 1, 26)
+        nome = chr(65 + resto) + nome
+    return nome
+
+
+def xlsx_cell(row, col, value, style=None):
+    ref = f"{excel_col(col)}{row}"
+    style_attr = f' s="{style}"' if style is not None else ""
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return f'<c r="{ref}"{style_attr}><v>{value:.2f}</v></c>'
+    safe = escape(str(value if value not in (None, "") else "-"))
+    return f'<c r="{ref}" t="inlineStr"{style_attr}><is><t>{safe}</t></is></c>'
+
+
+def xlsx_row(row_num, values, header=False):
+    style = 1 if header else None
+    return f'<row r="{row_num}">' + "".join(
+        xlsx_cell(row_num, index + 1, value, style) for index, value in enumerate(values)
+    ) + "</row>"
+
+
+def xlsx_sheet(rows, widths=None):
+    cols = ""
+    if widths:
+        cols = "<cols>" + "".join(
+            f'<col min="{index}" max="{index}" width="{width}" customWidth="1"/>'
+            for index, width in enumerate(widths, start=1)
+        ) + "</cols>"
+    return (
+        '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+        '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+        + cols
+        + "<sheetData>"
+        + "".join(rows)
+        + "</sheetData></worksheet>"
+    )
+
+
+def gerar_xlsx_fechamento(fechamento, itens):
+    criado_em = fechamento.criado_em.strftime("%d/%m/%Y %H:%M") if fechamento.criado_em else "-"
+    resumo_rows = [
+        xlsx_row(1, ["Ponto Do Pneu Auto Center"], True),
+        xlsx_row(2, [f"Relatorio de fechamento financeiro #{fechamento.id}"], True),
+        xlsx_row(3, [f"Gerado em {criado_em} por {fechamento.criado_por or '-'}"]),
+        xlsx_row(5, ["Campo", "Valor"], True),
+    ]
+    resumo = [
+        ("Qtd. OS", fechamento.quantidade_os or 0),
+        ("Valor total das OS", fechamento.total_os or 0),
+        ("Valor da franquia", fechamento.total_franquia or 0),
+        ("Valor total a faturar", fechamento.total_faturado_maxpar or 0),
+        ("Valor negociado", fechamento.total_valor_negociado or 0),
+        ("Contrapartida financeira", fechamento.total_contrapartida_financeira or 0),
+        ("Pecas", fechamento.total_pecas or 0),
+        ("Mao de obra", fechamento.total_mao_obra or 0),
+        ("Custo pecas", fechamento.total_custo_pecas or 0),
+        ("Orcamento", fechamento.total_orcamento or 0),
+    ]
+    for offset, row in enumerate(resumo, start=6):
+        resumo_rows.append(xlsx_row(offset, list(row)))
+
+    ordens_rows = [
+        xlsx_row(
+            1,
+            [
+                "OS",
+                "Cliente",
+                "Placa",
+                "Seguradora",
+                "Status",
+                "Valor da OS",
+                "Valor da franquia",
+                "Valor a faturar MaxPar",
+                "Valor negociado",
+                "Contrapartida financeira",
+            ],
+            True,
+        )
+    ]
+    for row_num, item in enumerate(itens, start=2):
+        ordens_rows.append(
+            xlsx_row(
+                row_num,
+                [
+                    f"#{item.numero_os}",
+                    item.cliente or "-",
+                    item.placa or "-",
+                    item.seguradora or "-",
+                    item.status or "-",
+                    valor_total_os(item),
+                    item.franquia or 0,
+                    item.faturado_maxpar or 0,
+                    item.valor_negociado or 0,
+                    item.contrapartida_financeira or 0,
+                ],
+            )
+        )
+
+    buffer = BytesIO()
+    with ZipFile(buffer, "w", ZIP_DEFLATED) as xlsx:
+        xlsx.writestr(
+            "[Content_Types].xml",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+            '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+            '<Default Extension="xml" ContentType="application/xml"/>'
+            '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+            '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            '<Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+            '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+            "</Types>",
+        )
+        xlsx.writestr(
+            "_rels/.rels",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+            "</Relationships>",
+        )
+        xlsx.writestr(
+            "xl/workbook.xml",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+            'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+            '<sheets><sheet name="Resumo" sheetId="1" r:id="rId1"/>'
+            '<sheet name="Ordens" sheetId="2" r:id="rId2"/></sheets></workbook>',
+        )
+        xlsx.writestr(
+            "xl/_rels/workbook.xml.rels",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+            '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>'
+            '<Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>'
+            '<Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+            "</Relationships>",
+        )
+        xlsx.writestr(
+            "xl/styles.xml",
+            '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+            '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts>'
+            '<fills count="1"><fill><patternFill patternType="none"/></fill></fills>'
+            '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+            '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+            '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+            '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs>'
+            "</styleSheet>",
+        )
+        xlsx.writestr("xl/worksheets/sheet1.xml", xlsx_sheet(resumo_rows, [32, 18]))
+        xlsx.writestr("xl/worksheets/sheet2.xml", xlsx_sheet(ordens_rows, [12, 28, 14, 20, 15, 16, 18, 22, 18, 24]))
+
+    buffer.seek(0)
+    return buffer
+
+
 def gerar_docx_fechamento(fechamento, itens):
     criado_em = fechamento.criado_em.strftime("%d/%m/%Y %H:%M") if fechamento.criado_em else "-"
     partes = [
@@ -528,12 +687,12 @@ def fechar_financeiro():
     itens = FechamentoFinanceiroItem.query.filter_by(fechamento_id=fechamento.id).order_by(
         FechamentoFinanceiroItem.id.asc()
     ).all()
-    arquivo = gerar_docx_fechamento(fechamento, itens)
+    arquivo = gerar_xlsx_fechamento(fechamento, itens)
     return send_file(
         arquivo,
-        mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         as_attachment=True,
-        download_name=f"fechamento-financeiro-{fechamento.id}.docx",
+        download_name=f"fechamento-financeiro-{fechamento.id}.xlsx",
     )
 
 
@@ -560,6 +719,22 @@ def baixar_relatorio_financeiro_docx(id):
         mimetype="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         as_attachment=True,
         download_name=f"fechamento-financeiro-{fechamento.id}.docx",
+    )
+
+
+@app.route("/financeiro/relatorio/<int:id>/xlsx")
+@login_required
+def baixar_relatorio_financeiro_xlsx(id):
+    fechamento = FechamentoFinanceiro.query.get_or_404(id)
+    itens = FechamentoFinanceiroItem.query.filter_by(fechamento_id=fechamento.id).order_by(
+        FechamentoFinanceiroItem.id.asc()
+    ).all()
+    arquivo = gerar_xlsx_fechamento(fechamento, itens)
+    return send_file(
+        arquivo,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name=f"fechamento-financeiro-{fechamento.id}.xlsx",
     )
 
 
