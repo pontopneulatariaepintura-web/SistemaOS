@@ -69,6 +69,7 @@ class FechamentoFinanceiroItem(db.Model):
     numero_os = db.Column(db.String(20))
     cliente = db.Column(db.String(120))
     placa = db.Column(db.String(20))
+    veiculo = db.Column(db.String(120))
     seguradora = db.Column(db.String(120))
     status = db.Column(db.String(30))
     valor_pecas = db.Column(db.Float, default=0)

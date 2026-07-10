@@ -151,8 +151,8 @@ def gerar_xlsx_fechamento(fechamento, itens):
     resumo = [
         ("Qtd. OS", fechamento.quantidade_os or 0),
         ("Valor total das OS", fechamento.total_os or 0),
-        ("Valor da franquia", fechamento.total_franquia or 0),
-        ("Valor total a faturar", fechamento.total_faturado_maxpar or 0),
+        ("Total da franquia", fechamento.total_franquia or 0),
+        ("Total faturado", fechamento.total_faturado_maxpar or 0),
         ("Contrapartida financeira", fechamento.total_contrapartida_financeira or 0),
         ("Pecas", fechamento.total_pecas or 0),
         ("Mao de obra", fechamento.total_mao_obra or 0),
@@ -169,6 +169,7 @@ def gerar_xlsx_fechamento(fechamento, itens):
                 "OS",
                 "Cliente",
                 "Placa",
+                "Veiculo",
                 "Seguradora",
                 "Status",
                 "Valor da OS",
@@ -187,6 +188,7 @@ def gerar_xlsx_fechamento(fechamento, itens):
                     f"#{item.numero_os}",
                     item.cliente or "-",
                     item.placa or "-",
+                    getattr(item, "veiculo", None) or buscar_veiculo_item_fechamento(item),
                     item.seguradora or "-",
                     item.status or "-",
                     valor_total_os(item),
@@ -248,10 +250,19 @@ def gerar_xlsx_fechamento(fechamento, itens):
             "</styleSheet>",
         )
         xlsx.writestr("xl/worksheets/sheet1.xml", xlsx_sheet(resumo_rows, [32, 18]))
-        xlsx.writestr("xl/worksheets/sheet2.xml", xlsx_sheet(ordens_rows, [12, 28, 14, 20, 15, 16, 18, 22, 18, 24]))
+        xlsx.writestr("xl/worksheets/sheet2.xml", xlsx_sheet(ordens_rows, [12, 28, 14, 24, 20, 15, 16, 18, 22, 24]))
 
     buffer.seek(0)
     return buffer
+
+
+def buscar_veiculo_item_fechamento(item):
+    if not getattr(item, "os_id", None):
+        return "-"
+    os_item = db.session.get(OS, item.os_id)
+    if not os_item:
+        return "-"
+    return os_item.carro_modelo or "-"
 
 
 def gerar_docx_fechamento(fechamento, itens):
@@ -284,6 +295,7 @@ def gerar_docx_fechamento(fechamento, itens):
                 "OS",
                 "Cliente",
                 "Placa",
+                "Veiculo",
                 "Seguradora",
                 "Status",
                 "Valor OS",
@@ -300,6 +312,7 @@ def gerar_docx_fechamento(fechamento, itens):
                     f"#{item.numero_os}",
                     item.cliente or "-",
                     item.placa or "-",
+                    getattr(item, "veiculo", None) or buscar_veiculo_item_fechamento(item),
                     item.seguradora or "-",
                     item.status or "-",
                     format_brl(valor_total_os(item)),
@@ -453,6 +466,7 @@ def ensure_os_columns():
             "total_faturado_maxpar": "FLOAT",
         },
         "fechamento_financeiro_item": {
+            "veiculo": "VARCHAR(120)",
             "valor_negociado": "FLOAT",
             "contrapartida_financeira": "FLOAT",
             "faturado_maxpar": "FLOAT",
@@ -665,6 +679,7 @@ def fechar_financeiro():
                 numero_os=os_item.numero_os,
                 cliente=os_item.cliente,
                 placa=os_item.placa,
+                veiculo=os_item.carro_modelo,
                 seguradora=os_item.seguradora,
                 status=os_item.status,
                 valor_pecas=os_item.valor_pecas or 0,
