@@ -5,7 +5,7 @@
     <h1>Financeiro</h1>
     <p>Valores das ordens de servi&ccedil;o em aberto desde o &uacute;ltimo fechamento. O estoque n&atilde;o &eacute; alterado.</p>
     <div class="actions">
-        <a class="btn btn-primary" href="{{ url_for('baixar_financeiro_aberto_xlsx') }}">Gerar Excel sem zerar</a>
+        <a class="btn btn-primary" href="{{ url_for('baixar_financeiro_aberto_xlsx', q=busca) }}">Gerar Excel sem zerar</a>
         {% if perfil_logado == 'admin' %}
         <form method="POST" action="{{ url_for('fechar_financeiro') }}" onsubmit="return confirm('Gerar fechamento e zerar somente o financeiro das ordens de servi&ccedil;o? O estoque n&atilde;o ser&aacute; alterado.')">
             <button class="btn btn-success" type="submit">Gerar fechamento e zerar financeiro das OS</button>
@@ -23,6 +23,16 @@
 
 <div class="panel">
     <h2>OS no financeiro em aberto</h2>
+    <form class="filter-form" method="GET" action="{{ url_for('financeiro') }}">
+        <label for="q">Pesquisar OS</label>
+        <div class="filter-row">
+            <input id="q" name="q" type="search" value="{{ busca }}" placeholder="Digite o n&uacute;mero da OS">
+            <button class="btn btn-primary" type="submit">Pesquisar</button>
+            {% if busca %}
+            <a class="btn btn-muted" href="{{ url_for('financeiro') }}">Limpar</a>
+            {% endif %}
+        </div>
+    </form>
     <table>
         <thead><tr><th>OS</th><th>Cliente</th><th>Placa</th><th>Status</th><th>Opera&ccedil;&atilde;o</th><th>Valor da franquia</th><th>Valor a faturar MaxPar</th><th>Valor da OS</th></tr></thead>
         <tbody>

@@ -641,7 +641,11 @@ def dashboard():
 @app.route("/financeiro")
 @login_required
 def financeiro():
-    ordens = OS.query.filter(OS.fechamento_id.is_(None)).order_by(OS.id.desc()).all()
+    busca = (request.args.get("q") or "").strip()
+    query = OS.query.filter(OS.fechamento_id.is_(None))
+    if busca:
+        query = query.filter(OS.numero_os.ilike(f"%{busca}%"))
+    ordens = query.order_by(OS.id.desc()).all()
     totais = {
         "quantidade": len(ordens),
         "pecas": sum(item.valor_pecas or 0 for item in ordens),
@@ -654,7 +658,7 @@ def financeiro():
     }
     totais["total_os"] = sum(valor_total_os(item) for item in ordens)
     fechamentos = FechamentoFinanceiro.query.order_by(FechamentoFinanceiro.id.desc()).all()
-    return render_template("financeiro.html", ordens=ordens, totais=totais, fechamentos=fechamentos)
+    return render_template("financeiro.html", ordens=ordens, totais=totais, fechamentos=fechamentos, busca=busca)
 
 
 def montar_fechamento_temporario(ordens):
@@ -703,7 +707,11 @@ def montar_itens_temporarios(ordens):
 @app.route("/financeiro/excel_aberto")
 @login_required
 def baixar_financeiro_aberto_xlsx():
-    ordens = OS.query.filter(OS.fechamento_id.is_(None)).order_by(OS.id.asc()).all()
+    busca = (request.args.get("q") or "").strip()
+    query = OS.query.filter(OS.fechamento_id.is_(None))
+    if busca:
+        query = query.filter(OS.numero_os.ilike(f"%{busca}%"))
+    ordens = query.order_by(OS.id.asc()).all()
     if not ordens:
         flash("NÃ£o hÃ¡ OS em aberto para gerar Excel.", "warning")
         return redirect(url_for("financeiro"))
