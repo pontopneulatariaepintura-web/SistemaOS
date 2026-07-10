@@ -78,6 +78,8 @@
                 <div class="field"><span class="label">Carro/modelo</span><span class="value">{{ os.carro_modelo or '-' }}</span></div>
                 <div class="field"><span class="label">Seguradora</span><span class="value">{{ os.seguradora or '-' }}</span></div>
                 <div class="field"><span class="label">Tipo de reparo</span><span class="value">{{ os.tipo_reparo or '-' }}</span></div>
+                <div class="field"><span class="label">Tipo de opera&ccedil;&atilde;o</span><span class="value">{{ os.tipo_operacao or '-' }}</span></div>
+                <div class="field full"><span class="label">Descri&ccedil;&atilde;o do servi&ccedil;o</span><span class="value">{{ os.descricao_servico or '-' }}</span></div>
                 <div class="field"><span class="label">Ve&iacute;culo de terceiro?</span><span class="value">{% if os.veiculo_terceiro %}Sim{% else %}N&atilde;o{% endif %}</span></div>
             </div>
         </section>
@@ -99,14 +101,13 @@
             <div class="totals">
                 <div class="total-card"><span class="label">Valor de pe&ccedil;as</span><strong>R$ {{ '%.2f'|format(os.valor_pecas or 0) }}</strong></div>
                 <div class="total-card"><span class="label">M&atilde;o de obra</span><strong>R$ {{ '%.2f'|format(os.valor_mao_obra or 0) }}</strong></div>
-                <div class="total-card"><span class="label">Total OS</span><strong>R$ {{ '%.2f'|format((os.valor_pecas or 0) + (os.valor_mao_obra or 0)) }}</strong></div>
+                <div class="total-card"><span class="label">Valor da OS</span><strong>R$ {{ '%.2f'|format(os.valor_os or ((os.valor_pecas or 0) + (os.valor_mao_obra or 0))) }}</strong></div>
                 <div class="total-card"><span class="label">Custo de pe&ccedil;as</span><strong>R$ {{ '%.2f'|format(os.custo_pecas or 0) }}</strong></div>
                 <div class="total-card"><span class="label">Or&ccedil;amento</span><strong>R$ {{ '%.2f'|format(os.orcamento or 0) }}</strong></div>
-                <div class="total-card"><span class="label">Franquia</span><strong>R$ {{ '%.2f'|format(os.franquia or 0) }}</strong></div>
-                <div class="total-card"><span class="label">Total a receber</span><strong>R$ {{ '%.2f'|format(os.total_receber or 0) }}</strong></div>
+                <div class="total-card"><span class="label">Valor da franquia</span><strong>R$ {{ '%.2f'|format(os.franquia or 0) }}</strong></div>
                 <div class="total-card"><span class="label">Valor negociado</span><strong>R$ {{ '%.2f'|format(os.valor_negociado or 0) }}</strong></div>
                 <div class="total-card"><span class="label">Contrapartida financeira</span><strong>R$ {{ '%.2f'|format(os.contrapartida_financeira or 0) }}</strong></div>
-                <div class="total-card"><span class="label">Faturado para MaxPar</span><strong>R$ {{ '%.2f'|format(os.faturado_maxpar or 0) }}</strong></div>
+                <div class="total-card"><span class="label">Valor a faturar para MaxPar</span><strong>R$ {{ '%.2f'|format(os.faturado_maxpar or 0) }}</strong></div>
             </div>
         </section>
 

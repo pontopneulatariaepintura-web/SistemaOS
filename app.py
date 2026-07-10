@@ -31,6 +31,7 @@ db.init_app(app)
 
 STATUS_FLOW = ["CRIADA", "VISTORIA", "LIBERADA", "REPARO", "FINALIZADA"]
 TIPOS_REPARO = ["Pequenos reparos", "Troca de pneu/roda", "Lataria e Pintura", "Parabrisa"]
+OPERACOES_OS = ["Venda", "Fornecimento"]
 SEGURADORAS = ["Porto Seguro", "Tokio", "HDI", "Yellum", "Mapfr", "Zurich", "MaxPar", "Car Glass", "Alura", "Allianz", "Youse", "Suhai", "Bradesco", "Itau", "Mithsui", "Santander", "Sura", "Loovi", "Conecta", "Pioneira", "Alfa", "Guara", "Potencia BR"]
 
 
@@ -47,6 +48,13 @@ def parse_float(valor):
     if valor in (None, ""):
         return 0
     return float(str(valor).replace(",", "."))
+
+
+def valor_total_os(item):
+    valor_os = item.valor_os or 0
+    if valor_os > 0:
+        return valor_os
+    return (item.valor_pecas or 0) + (item.valor_mao_obra or 0)
 
 
 def format_brl(valor):
@@ -100,14 +108,13 @@ def gerar_docx_fechamento(fechamento, itens):
                 docx_row(["Qtd. OS", fechamento.quantidade_os or 0]),
                 docx_row(["Pecas", format_brl(fechamento.total_pecas)]),
                 docx_row(["Mao de obra", format_brl(fechamento.total_mao_obra)]),
-                docx_row(["Total OS", format_brl(fechamento.total_os)]),
+                docx_row(["Valor total das OS", format_brl(fechamento.total_os)]),
                 docx_row(["Custo pecas", format_brl(fechamento.total_custo_pecas)]),
                 docx_row(["Orcamento", format_brl(fechamento.total_orcamento)]),
-                docx_row(["Franquia", format_brl(fechamento.total_franquia)]),
-                docx_row(["Total a receber com franquia", format_brl(fechamento.total_receber)]),
+                docx_row(["Valor da franquia", format_brl(fechamento.total_franquia)]),
                 docx_row(["Valor negociado", format_brl(fechamento.total_valor_negociado)]),
                 docx_row(["Contrapartida financeira", format_brl(fechamento.total_contrapartida_financeira)]),
-                docx_row(["Faturado para MaxPar", format_brl(fechamento.total_faturado_maxpar)]),
+                docx_row(["Valor a faturar para MaxPar", format_brl(fechamento.total_faturado_maxpar)]),
             ]
         ),
         docx_paragraph("Ordens incluidas", True),
@@ -121,10 +128,9 @@ def gerar_docx_fechamento(fechamento, itens):
                 "Placa",
                 "Seguradora",
                 "Status",
-                "Total OS",
-                "Franquia",
-                "Total receber",
-                "Faturado MaxPar",
+                "Valor OS",
+                "Valor da franquia",
+                "Valor a faturar MaxPar",
             ],
             True,
         )
@@ -138,9 +144,8 @@ def gerar_docx_fechamento(fechamento, itens):
                     item.placa or "-",
                     item.seguradora or "-",
                     item.status or "-",
-                    format_brl((item.valor_pecas or 0) + (item.valor_mao_obra or 0)),
+                    format_brl(valor_total_os(item)),
                     format_brl(item.franquia),
-                    format_brl(item.total_receber),
                     format_brl(item.faturado_maxpar),
                 ]
             )
@@ -271,6 +276,9 @@ def ensure_os_columns():
         "valor_negociado": "FLOAT",
         "contrapartida_financeira": "FLOAT",
         "faturado_maxpar": "FLOAT",
+        "valor_os": "FLOAT",
+        "tipo_operacao": "VARCHAR(30)",
+        "descricao_servico": "TEXT",
         "data_criacao": "TIMESTAMP" if dialect == "postgresql" else "DATETIME",
         "ultima_atualizacao": "TIMESTAMP" if dialect == "postgresql" else "DATETIME",
         "fechamento_id": "INTEGER",
@@ -290,6 +298,7 @@ def ensure_os_columns():
             "valor_negociado": "FLOAT",
             "contrapartida_financeira": "FLOAT",
             "faturado_maxpar": "FLOAT",
+            "valor_os": "FLOAT",
         },
     }.items():
         existing_table_columns = {column["name"] for column in inspector.get_columns(table_name)}
@@ -457,12 +466,11 @@ def financeiro():
         "custo_pecas": sum(item.custo_pecas or 0 for item in ordens),
         "orcamento": sum(item.orcamento or 0 for item in ordens),
         "franquia": sum(item.franquia or 0 for item in ordens),
-        "receber": sum((item.total_receber or 0) + (item.franquia or 0) for item in ordens),
         "valor_negociado": sum(item.valor_negociado or 0 for item in ordens),
         "contrapartida": sum(item.contrapartida_financeira or 0 for item in ordens),
         "faturado_maxpar": sum(item.faturado_maxpar or 0 for item in ordens),
     }
-    totais["total_os"] = totais["pecas"] + totais["mao_obra"]
+    totais["total_os"] = sum(valor_total_os(item) for item in ordens)
     fechamentos = FechamentoFinanceiro.query.order_by(FechamentoFinanceiro.id.desc()).all()
     return render_template("financeiro.html", ordens=ordens, totais=totais, fechamentos=fechamentos)
 
@@ -483,12 +491,12 @@ def fechar_financeiro():
         total_custo_pecas=sum(item.custo_pecas or 0 for item in ordens),
         total_orcamento=sum(item.orcamento or 0 for item in ordens),
         total_franquia=sum(item.franquia or 0 for item in ordens),
-        total_receber=sum((item.total_receber or 0) + (item.franquia or 0) for item in ordens),
+        total_receber=0,
         total_valor_negociado=sum(item.valor_negociado or 0 for item in ordens),
         total_contrapartida_financeira=sum(item.contrapartida_financeira or 0 for item in ordens),
         total_faturado_maxpar=sum(item.faturado_maxpar or 0 for item in ordens),
     )
-    fechamento.total_os = fechamento.total_pecas + fechamento.total_mao_obra
+    fechamento.total_os = sum(valor_total_os(item) for item in ordens)
     db.session.add(fechamento)
     db.session.flush()
 
@@ -511,6 +519,7 @@ def fechar_financeiro():
                 valor_negociado=os_item.valor_negociado or 0,
                 contrapartida_financeira=os_item.contrapartida_financeira or 0,
                 faturado_maxpar=os_item.faturado_maxpar or 0,
+                valor_os=valor_total_os(os_item),
             )
         )
         os_item.fechamento_id = fechamento.id
@@ -614,6 +623,8 @@ def nova_os():
         seguradora = request.form.get("seguradora", "").strip()
         carro_modelo = request.form.get("carro_modelo", "").strip()
         tipo_reparo = request.form.get("tipo_reparo", "").strip()
+        tipo_operacao = request.form.get("tipo_operacao", "Venda").strip()
+        descricao_servico = request.form.get("descricao_servico", "").strip()
         valor_pecas_raw = request.form.get("valor_pecas", "").strip()
         valor_mao_obra_raw = request.form.get("valor_mao_obra", "").strip()
         custo_pecas_raw = request.form.get("custo_pecas", "").strip()
@@ -623,20 +634,25 @@ def nova_os():
         valor_negociado_raw = request.form.get("valor_negociado", "").strip()
         contrapartida_financeira_raw = request.form.get("contrapartida_financeira", "").strip()
         faturado_maxpar_raw = request.form.get("faturado_maxpar", "").strip()
+        valor_os_raw = request.form.get("valor_os", "").strip()
         veiculo_terceiro = request.form.get("veiculo_terceiro") == "sim"
         form_data = request.form
 
         if not all([numero_os, cliente, placa, seguradora, tipo_reparo, valor_pecas_raw, valor_mao_obra_raw]):
             flash("Preencha todos os campos obrigat\u00f3rios da ordem de servi\u00e7o.", "danger")
-            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, operacoes_os=OPERACOES_OS, seguradoras=SEGURADORAS)
 
         if seguradora not in SEGURADORAS:
             flash("Selecione uma seguradora v\u00e1lida.", "danger")
-            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, operacoes_os=OPERACOES_OS, seguradoras=SEGURADORAS)
 
         if tipo_reparo not in TIPOS_REPARO:
             flash("Selecione um tipo de reparo v\u00e1lido.", "danger")
-            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, operacoes_os=OPERACOES_OS, seguradoras=SEGURADORAS)
+
+        if tipo_operacao not in OPERACOES_OS:
+            flash("Selecione venda ou fornecimento.", "danger")
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, operacoes_os=OPERACOES_OS, seguradoras=SEGURADORAS)
 
         try:
             valor_pecas = parse_float(valor_pecas_raw)
@@ -648,17 +664,18 @@ def nova_os():
             valor_negociado = parse_float(valor_negociado_raw)
             contrapartida_financeira = parse_float(contrapartida_financeira_raw)
             faturado_maxpar = parse_float(faturado_maxpar_raw)
+            valor_os = parse_float(valor_os_raw)
         except ValueError:
             flash("Informe valores v\u00e1lidos para pe\u00e7as e m\u00e3o de obra.", "danger")
-            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, operacoes_os=OPERACOES_OS, seguradoras=SEGURADORAS)
 
-        if min(valor_pecas, valor_mao_obra, custo_pecas, orcamento, franquia, total_receber, valor_negociado, contrapartida_financeira, faturado_maxpar) < 0:
+        if min(valor_pecas, valor_mao_obra, custo_pecas, orcamento, franquia, total_receber, valor_negociado, contrapartida_financeira, faturado_maxpar, valor_os) < 0:
             flash("Os valores de pe\u00e7as e m\u00e3o de obra n\u00e3o podem ser negativos.", "danger")
-            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, operacoes_os=OPERACOES_OS, seguradoras=SEGURADORAS)
 
         if OS.query.filter_by(numero_os=numero_os).first():
             flash("J\u00e1 existe uma OS com esse n\u00famero.", "danger")
-            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
+            return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, operacoes_os=OPERACOES_OS, seguradoras=SEGURADORAS)
 
         nova = OS(
             numero_os=numero_os,
@@ -674,6 +691,9 @@ def nova_os():
             valor_negociado=valor_negociado,
             contrapartida_financeira=contrapartida_financeira,
             faturado_maxpar=faturado_maxpar,
+            valor_os=valor_os,
+            tipo_operacao=tipo_operacao,
+            descricao_servico=descricao_servico,
             tipo_reparo=tipo_reparo,
             data_entrada=parse_date(request.form.get("data_entrada")),
             data_vistoria=parse_date(request.form.get("data_vistoria")),
@@ -692,7 +712,7 @@ def nova_os():
         flash("Ordem de servi\u00e7o criada.", "success")
         return redirect(url_for("listar_os"))
 
-    return render_template("nova_os.html", form_data={}, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
+    return render_template("nova_os.html", form_data={}, tipos_reparo=TIPOS_REPARO, operacoes_os=OPERACOES_OS, seguradoras=SEGURADORAS)
 
 
 @app.route("/listar_os")
@@ -742,6 +762,8 @@ def editar_os(id):
         os_item.placa = request.form.get("placa", "").strip().upper()
         os_item.seguradora = request.form.get("seguradora", "").strip()
         os_item.carro_modelo = request.form.get("carro_modelo", "").strip()
+        os_item.tipo_operacao = request.form.get("tipo_operacao", os_item.tipo_operacao or "Venda").strip()
+        os_item.descricao_servico = request.form.get("descricao_servico", "").strip()
         os_item.custo_pecas = parse_float(request.form.get("custo_pecas"))
         os_item.orcamento = parse_float(request.form.get("orcamento"))
         os_item.franquia = parse_float(request.form.get("franquia"))
@@ -750,6 +772,7 @@ def editar_os(id):
         os_item.valor_negociado = parse_float(request.form.get("valor_negociado"))
         os_item.contrapartida_financeira = parse_float(request.form.get("contrapartida_financeira"))
         os_item.faturado_maxpar = parse_float(request.form.get("faturado_maxpar"))
+        os_item.valor_os = parse_float(request.form.get("valor_os"))
         os_item.tipo_reparo = request.form.get("tipo_reparo", "").strip()
         os_item.data_entrada = parse_date(request.form.get("data_entrada"))
         os_item.data_vistoria = parse_date(request.form.get("data_vistoria"))
@@ -765,7 +788,7 @@ def editar_os(id):
         flash("Ordem de servi\u00e7o atualizada.", "success")
         return redirect(url_for("listar_os"))
 
-    return render_template("editar_os.html", os=os_item, status_flow=STATUS_FLOW, tipos_reparo=TIPOS_REPARO, seguradoras=SEGURADORAS)
+    return render_template("editar_os.html", os=os_item, status_flow=STATUS_FLOW, tipos_reparo=TIPOS_REPARO, operacoes_os=OPERACOES_OS, seguradoras=SEGURADORAS)
 
 
 @app.route("/imprimir_os/<int:id>")

@@ -15,18 +15,15 @@
 
 <div class="grid">
     <div class="card metric-card metric-total"><h3>OS em aberto</h3><div class="numero">{{ totais.quantidade }}</div></div>
-    <div class="card metric-card metric-criadas"><h3>Pe&ccedil;as</h3><div class="numero">R$ {{ "%.2f"|format(totais.pecas) }}</div></div>
-    <div class="card metric-card metric-vistoria"><h3>M&atilde;o de obra</h3><div class="numero">R$ {{ "%.2f"|format(totais.mao_obra) }}</div></div>
-    <div class="card metric-card metric-liberadas"><h3>Total OS</h3><div class="numero">R$ {{ "%.2f"|format(totais.total_os) }}</div></div>
-    <div class="card metric-card metric-reparo"><h3>Custo de pe&ccedil;as</h3><div class="numero">R$ {{ "%.2f"|format(totais.custo_pecas) }}</div></div>
-    <div class="card metric-card metric-finalizadas"><h3>Total a receber com franquia</h3><div class="numero">R$ {{ "%.2f"|format(totais.receber) }}</div></div>
-    <div class="card metric-card metric-liberadas"><h3>Faturado para MaxPar</h3><div class="numero">R$ {{ "%.2f"|format(totais.faturado_maxpar) }}</div></div>
+    <div class="card metric-card metric-liberadas"><h3>Valor total das OS</h3><div class="numero">R$ {{ "%.2f"|format(totais.total_os) }}</div></div>
+    <div class="card metric-card metric-finalizadas"><h3>Valor total a faturar</h3><div class="numero">R$ {{ "%.2f"|format(totais.faturado_maxpar) }}</div></div>
+    <div class="card metric-card metric-vistoria"><h3>Valor da franquia</h3><div class="numero">R$ {{ "%.2f"|format(totais.franquia) }}</div></div>
 </div>
 
 <div class="panel">
     <h2>OS no financeiro em aberto</h2>
     <table>
-        <thead><tr><th>OS</th><th>Cliente</th><th>Placa</th><th>Status</th><th>Pe&ccedil;as</th><th>M&atilde;o de obra</th><th>Franquia</th><th>Total a receber</th><th>Faturado MaxPar</th><th>Total</th></tr></thead>
+        <thead><tr><th>OS</th><th>Cliente</th><th>Placa</th><th>Status</th><th>Opera&ccedil;&atilde;o</th><th>Valor da franquia</th><th>Valor a faturar MaxPar</th><th>Valor da OS</th></tr></thead>
         <tbody>
             {% for os in ordens %}
             <tr>
@@ -34,15 +31,13 @@
                 <td>{{ os.cliente or '-' }}</td>
                 <td>{{ os.placa or '-' }}</td>
                 <td>{{ os.status }}</td>
-                <td>R$ {{ "%.2f"|format(os.valor_pecas or 0) }}</td>
-                <td>R$ {{ "%.2f"|format(os.valor_mao_obra or 0) }}</td>
+                <td>{{ os.tipo_operacao or '-' }}</td>
                 <td>R$ {{ "%.2f"|format(os.franquia or 0) }}</td>
-                <td>R$ {{ "%.2f"|format((os.total_receber or 0) + (os.franquia or 0)) }}</td>
                 <td>R$ {{ "%.2f"|format(os.faturado_maxpar or 0) }}</td>
-                <td>R$ {{ "%.2f"|format((os.valor_pecas or 0) + (os.valor_mao_obra or 0)) }}</td>
+                <td>R$ {{ "%.2f"|format(os.valor_os or ((os.valor_pecas or 0) + (os.valor_mao_obra or 0))) }}</td>
             </tr>
             {% else %}
-            <tr><td colspan="10">Financeiro das OS zerado. Nenhuma OS em aberto para fechar.</td></tr>
+            <tr><td colspan="8">Financeiro das OS zerado. Nenhuma OS em aberto para fechar.</td></tr>
             {% endfor %}
         </tbody>
     </table>
@@ -51,7 +46,7 @@
 <div class="panel">
     <h2>Relat&oacute;rios de fechamento</h2>
     <table>
-        <thead><tr><th>N&ordm;</th><th>Data</th><th>Usu&aacute;rio</th><th>Qtd. OS</th><th>Total OS</th><th>Total a receber com franquia</th><th>Faturado MaxPar</th><th>A&ccedil;&otilde;es</th></tr></thead>
+        <thead><tr><th>N&ordm;</th><th>Data</th><th>Usu&aacute;rio</th><th>Qtd. OS</th><th>Valor total das OS</th><th>Valor da franquia</th><th>Valor total a faturar</th><th>A&ccedil;&otilde;es</th></tr></thead>
         <tbody>
             {% for fechamento in fechamentos %}
             <tr>
@@ -60,7 +55,7 @@
                 <td>{{ fechamento.criado_por or '-' }}</td>
                 <td>{{ fechamento.quantidade_os }}</td>
                 <td>R$ {{ "%.2f"|format(fechamento.total_os or 0) }}</td>
-                <td>R$ {{ "%.2f"|format(fechamento.total_receber or 0) }}</td>
+                <td>R$ {{ "%.2f"|format(fechamento.total_franquia or 0) }}</td>
                 <td>R$ {{ "%.2f"|format(fechamento.total_faturado_maxpar or 0) }}</td>
                 <td><a class="btn btn-primary" href="{{ url_for('relatorio_financeiro', id=fechamento.id) }}">Abrir relat&oacute;rio</a><a class="btn btn-muted" href="{{ url_for('baixar_relatorio_financeiro_docx', id=fechamento.id) }}">Baixar DOCX</a></td>
             </tr>

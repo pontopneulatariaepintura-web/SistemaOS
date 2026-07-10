@@ -26,6 +26,9 @@ class OS(db.Model):
     valor_negociado = db.Column(db.Float, default=0)
     contrapartida_financeira = db.Column(db.Float, default=0)
     faturado_maxpar = db.Column(db.Float, default=0)
+    valor_os = db.Column(db.Float, default=0)
+    tipo_operacao = db.Column(db.String(30))
+    descricao_servico = db.Column(db.Text)
     tipo_reparo = db.Column(db.String(60))
     status = db.Column(db.String(30), default="CRIADA")
     data_entrada = db.Column(db.Date)
@@ -77,6 +80,7 @@ class FechamentoFinanceiroItem(db.Model):
     valor_negociado = db.Column(db.Float, default=0)
     contrapartida_financeira = db.Column(db.Float, default=0)
     faturado_maxpar = db.Column(db.Float, default=0)
+    valor_os = db.Column(db.Float, default=0)
 
     fechamento = db.relationship("FechamentoFinanceiro", backref=db.backref("itens", lazy=True, cascade="all, delete-orphan"))
 
