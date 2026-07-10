@@ -34,7 +34,7 @@
                 <td>{{ os.tipo_operacao or '-' }}</td>
                 <td>R$ {{ "%.2f"|format(os.franquia or 0) }}</td>
                 <td>R$ {{ "%.2f"|format(os.faturado_maxpar or 0) }}</td>
-                <td>R$ {{ "%.2f"|format(os.valor_os or ((os.valor_pecas or 0) + (os.valor_mao_obra or 0))) }}</td>
+                <td>R$ {{ "%.2f"|format(os.valor_os or os.valor_negociado or ((os.valor_pecas or 0) + (os.valor_mao_obra or 0))) }}</td>
             </tr>
             {% else %}
             <tr><td colspan="8">Financeiro das OS zerado. Nenhuma OS em aberto para fechar.</td></tr>

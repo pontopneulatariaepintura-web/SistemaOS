@@ -54,6 +54,9 @@ def valor_total_os(item):
     valor_os = item.valor_os or 0
     if valor_os > 0:
         return valor_os
+    valor_negociado = item.valor_negociado or 0
+    if valor_negociado > 0:
+        return valor_negociado
     return (item.valor_pecas or 0) + (item.valor_mao_obra or 0)
 
 
@@ -150,7 +153,6 @@ def gerar_xlsx_fechamento(fechamento, itens):
         ("Valor total das OS", fechamento.total_os or 0),
         ("Valor da franquia", fechamento.total_franquia or 0),
         ("Valor total a faturar", fechamento.total_faturado_maxpar or 0),
-        ("Valor negociado", fechamento.total_valor_negociado or 0),
         ("Contrapartida financeira", fechamento.total_contrapartida_financeira or 0),
         ("Pecas", fechamento.total_pecas or 0),
         ("Mao de obra", fechamento.total_mao_obra or 0),
@@ -172,7 +174,6 @@ def gerar_xlsx_fechamento(fechamento, itens):
                 "Valor da OS",
                 "Valor da franquia",
                 "Valor a faturar MaxPar",
-                "Valor negociado",
                 "Contrapartida financeira",
             ],
             True,
@@ -191,7 +192,6 @@ def gerar_xlsx_fechamento(fechamento, itens):
                     valor_total_os(item),
                     item.franquia or 0,
                     item.faturado_maxpar or 0,
-                    item.valor_negociado or 0,
                     item.contrapartida_financeira or 0,
                 ],
             )
@@ -271,7 +271,6 @@ def gerar_docx_fechamento(fechamento, itens):
                 docx_row(["Custo pecas", format_brl(fechamento.total_custo_pecas)]),
                 docx_row(["Orcamento", format_brl(fechamento.total_orcamento)]),
                 docx_row(["Valor da franquia", format_brl(fechamento.total_franquia)]),
-                docx_row(["Valor negociado", format_brl(fechamento.total_valor_negociado)]),
                 docx_row(["Contrapartida financeira", format_brl(fechamento.total_contrapartida_financeira)]),
                 docx_row(["Valor a faturar para MaxPar", format_brl(fechamento.total_faturado_maxpar)]),
             ]
@@ -625,7 +624,6 @@ def financeiro():
         "custo_pecas": sum(item.custo_pecas or 0 for item in ordens),
         "orcamento": sum(item.orcamento or 0 for item in ordens),
         "franquia": sum(item.franquia or 0 for item in ordens),
-        "valor_negociado": sum(item.valor_negociado or 0 for item in ordens),
         "contrapartida": sum(item.contrapartida_financeira or 0 for item in ordens),
         "faturado_maxpar": sum(item.faturado_maxpar or 0 for item in ordens),
     }
@@ -651,7 +649,7 @@ def fechar_financeiro():
         total_orcamento=sum(item.orcamento or 0 for item in ordens),
         total_franquia=sum(item.franquia or 0 for item in ordens),
         total_receber=0,
-        total_valor_negociado=sum(item.valor_negociado or 0 for item in ordens),
+        total_valor_negociado=sum(valor_total_os(item) for item in ordens),
         total_contrapartida_financeira=sum(item.contrapartida_financeira or 0 for item in ordens),
         total_faturado_maxpar=sum(item.faturado_maxpar or 0 for item in ordens),
     )
@@ -806,7 +804,6 @@ def nova_os():
         orcamento_raw = request.form.get("orcamento", "").strip()
         franquia_raw = request.form.get("franquia", "").strip()
         total_receber_raw = request.form.get("total_receber", "").strip()
-        valor_negociado_raw = request.form.get("valor_negociado", "").strip()
         contrapartida_financeira_raw = request.form.get("contrapartida_financeira", "").strip()
         faturado_maxpar_raw = request.form.get("faturado_maxpar", "").strip()
         valor_os_raw = request.form.get("valor_os", "").strip()
@@ -836,7 +833,6 @@ def nova_os():
             orcamento = parse_float(orcamento_raw)
             franquia = parse_float(franquia_raw)
             total_receber = parse_float(total_receber_raw)
-            valor_negociado = parse_float(valor_negociado_raw)
             contrapartida_financeira = parse_float(contrapartida_financeira_raw)
             faturado_maxpar = parse_float(faturado_maxpar_raw)
             valor_os = parse_float(valor_os_raw)
@@ -844,7 +840,7 @@ def nova_os():
             flash("Informe valores v\u00e1lidos para pe\u00e7as e m\u00e3o de obra.", "danger")
             return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, operacoes_os=OPERACOES_OS, seguradoras=SEGURADORAS)
 
-        if min(valor_pecas, valor_mao_obra, custo_pecas, orcamento, franquia, total_receber, valor_negociado, contrapartida_financeira, faturado_maxpar, valor_os) < 0:
+        if min(valor_pecas, valor_mao_obra, custo_pecas, orcamento, franquia, total_receber, contrapartida_financeira, faturado_maxpar, valor_os) < 0:
             flash("Os valores de pe\u00e7as e m\u00e3o de obra n\u00e3o podem ser negativos.", "danger")
             return render_template("nova_os.html", form_data=form_data, tipos_reparo=TIPOS_REPARO, operacoes_os=OPERACOES_OS, seguradoras=SEGURADORAS)
 
@@ -863,7 +859,7 @@ def nova_os():
             franquia=franquia,
             veiculo_terceiro=veiculo_terceiro,
             total_receber=total_receber,
-            valor_negociado=valor_negociado,
+            valor_negociado=valor_os,
             contrapartida_financeira=contrapartida_financeira,
             faturado_maxpar=faturado_maxpar,
             valor_os=valor_os,
@@ -944,10 +940,10 @@ def editar_os(id):
         os_item.franquia = parse_float(request.form.get("franquia"))
         os_item.veiculo_terceiro = request.form.get("veiculo_terceiro") == "sim"
         os_item.total_receber = parse_float(request.form.get("total_receber"))
-        os_item.valor_negociado = parse_float(request.form.get("valor_negociado"))
         os_item.contrapartida_financeira = parse_float(request.form.get("contrapartida_financeira"))
         os_item.faturado_maxpar = parse_float(request.form.get("faturado_maxpar"))
         os_item.valor_os = parse_float(request.form.get("valor_os"))
+        os_item.valor_negociado = os_item.valor_os
         os_item.tipo_reparo = request.form.get("tipo_reparo", "").strip()
         os_item.data_entrada = parse_date(request.form.get("data_entrada"))
         os_item.data_vistoria = parse_date(request.form.get("data_vistoria"))
