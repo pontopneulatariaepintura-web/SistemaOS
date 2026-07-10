@@ -60,6 +60,17 @@ def valor_total_os(item):
     return (item.valor_pecas or 0) + (item.valor_mao_obra or 0)
 
 
+def is_maxpar(item):
+    seguradora = (item.seguradora or "").lower().replace(" ", "")
+    return "maxpar" in seguradora
+
+
+def valor_faturado_maxpar(item):
+    if not is_maxpar(item):
+        return 0
+    return item.faturado_maxpar or 0
+
+
 def format_brl(valor):
     return f"R$ {(valor or 0):.2f}"
 
@@ -152,7 +163,7 @@ def gerar_xlsx_fechamento(fechamento, itens):
         ("Qtd. OS", fechamento.quantidade_os or 0),
         ("Valor total das OS", fechamento.total_os or 0),
         ("Total da franquia", fechamento.total_franquia or 0),
-        ("Total faturado", fechamento.total_faturado_maxpar or 0),
+        ("Total faturado MaxPar", fechamento.total_faturado_maxpar or 0),
         ("Contrapartida financeira", fechamento.total_contrapartida_financeira or 0),
         ("Pecas", fechamento.total_pecas or 0),
         ("Mao de obra", fechamento.total_mao_obra or 0),
@@ -639,7 +650,7 @@ def financeiro():
         "orcamento": sum(item.orcamento or 0 for item in ordens),
         "franquia": sum(item.franquia or 0 for item in ordens),
         "contrapartida": sum(item.contrapartida_financeira or 0 for item in ordens),
-        "faturado_maxpar": sum(item.faturado_maxpar or 0 for item in ordens),
+        "faturado_maxpar": sum(valor_faturado_maxpar(item) for item in ordens),
     }
     totais["total_os"] = sum(valor_total_os(item) for item in ordens)
     fechamentos = FechamentoFinanceiro.query.order_by(FechamentoFinanceiro.id.desc()).all()
@@ -665,7 +676,7 @@ def fechar_financeiro():
         total_receber=0,
         total_valor_negociado=sum(valor_total_os(item) for item in ordens),
         total_contrapartida_financeira=sum(item.contrapartida_financeira or 0 for item in ordens),
-        total_faturado_maxpar=sum(item.faturado_maxpar or 0 for item in ordens),
+        total_faturado_maxpar=sum(valor_faturado_maxpar(item) for item in ordens),
     )
     fechamento.total_os = sum(valor_total_os(item) for item in ordens)
     db.session.add(fechamento)

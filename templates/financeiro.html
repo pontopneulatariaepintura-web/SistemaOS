@@ -16,7 +16,7 @@
 <div class="grid">
     <div class="card metric-card metric-total"><h3>OS em aberto</h3><div class="numero">{{ totais.quantidade }}</div></div>
     <div class="card metric-card metric-liberadas"><h3>Valor total das OS</h3><div class="numero">R$ {{ "%.2f"|format(totais.total_os) }}</div></div>
-    <div class="card metric-card metric-finalizadas"><h3>Valor total a faturar</h3><div class="numero">R$ {{ "%.2f"|format(totais.faturado_maxpar) }}</div></div>
+    <div class="card metric-card metric-finalizadas"><h3>Total faturado MaxPar</h3><div class="numero">R$ {{ "%.2f"|format(totais.faturado_maxpar) }}</div></div>
     <div class="card metric-card metric-vistoria"><h3>Valor da franquia</h3><div class="numero">R$ {{ "%.2f"|format(totais.franquia) }}</div></div>
 </div>
 
@@ -46,7 +46,7 @@
 <div class="panel">
     <h2>Relat&oacute;rios de fechamento</h2>
     <table>
-        <thead><tr><th>N&ordm;</th><th>Data</th><th>Usu&aacute;rio</th><th>Qtd. OS</th><th>Valor total das OS</th><th>Valor da franquia</th><th>Valor total a faturar</th><th>A&ccedil;&otilde;es</th></tr></thead>
+        <thead><tr><th>N&ordm;</th><th>Data</th><th>Usu&aacute;rio</th><th>Qtd. OS</th><th>Valor total das OS</th><th>Valor da franquia</th><th>Total faturado MaxPar</th><th>A&ccedil;&otilde;es</th></tr></thead>
         <tbody>
             {% for fechamento in fechamentos %}
             <tr>
