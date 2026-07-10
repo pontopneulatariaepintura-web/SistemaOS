@@ -657,6 +657,67 @@ def financeiro():
     return render_template("financeiro.html", ordens=ordens, totais=totais, fechamentos=fechamentos)
 
 
+def montar_fechamento_temporario(ordens):
+    return FechamentoFinanceiro(
+        id=0,
+        criado_em=datetime.utcnow(),
+        criado_por=session.get("username") if session else "-",
+        quantidade_os=len(ordens),
+        total_pecas=sum(item.valor_pecas or 0 for item in ordens),
+        total_mao_obra=sum(item.valor_mao_obra or 0 for item in ordens),
+        total_custo_pecas=sum(item.custo_pecas or 0 for item in ordens),
+        total_orcamento=sum(item.orcamento or 0 for item in ordens),
+        total_franquia=sum(item.franquia or 0 for item in ordens),
+        total_receber=0,
+        total_valor_negociado=sum(valor_total_os(item) for item in ordens),
+        total_contrapartida_financeira=sum(item.contrapartida_financeira or 0 for item in ordens),
+        total_faturado_maxpar=sum(valor_faturado_maxpar(item) for item in ordens),
+    )
+
+
+def montar_itens_temporarios(ordens):
+    return [
+        FechamentoFinanceiroItem(
+            os_id=os_item.id,
+            numero_os=os_item.numero_os,
+            cliente=os_item.cliente,
+            placa=os_item.placa,
+            veiculo=os_item.carro_modelo,
+            seguradora=os_item.seguradora,
+            status=os_item.status,
+            valor_pecas=os_item.valor_pecas or 0,
+            valor_mao_obra=os_item.valor_mao_obra or 0,
+            custo_pecas=os_item.custo_pecas or 0,
+            orcamento=os_item.orcamento or 0,
+            franquia=os_item.franquia or 0,
+            total_receber=(os_item.total_receber or 0) + (os_item.franquia or 0),
+            valor_negociado=os_item.valor_negociado or 0,
+            contrapartida_financeira=os_item.contrapartida_financeira or 0,
+            faturado_maxpar=os_item.faturado_maxpar or 0,
+            valor_os=valor_total_os(os_item),
+        )
+        for os_item in ordens
+    ]
+
+
+@app.route("/financeiro/excel_aberto")
+@login_required
+def baixar_financeiro_aberto_xlsx():
+    ordens = OS.query.filter(OS.fechamento_id.is_(None)).order_by(OS.id.asc()).all()
+    if not ordens:
+        flash("NÃ£o hÃ¡ OS em aberto para gerar Excel.", "warning")
+        return redirect(url_for("financeiro"))
+
+    fechamento = montar_fechamento_temporario(ordens)
+    arquivo = gerar_xlsx_fechamento(fechamento, montar_itens_temporarios(ordens))
+    return send_file(
+        arquivo,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        as_attachment=True,
+        download_name="financeiro-aberto.xlsx",
+    )
+
+
 @app.route("/financeiro/fechar", methods=["POST"])
 @admin_required
 def fechar_financeiro():

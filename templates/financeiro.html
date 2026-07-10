@@ -5,6 +5,7 @@
     <h1>Financeiro</h1>
     <p>Valores das ordens de servi&ccedil;o em aberto desde o &uacute;ltimo fechamento. O estoque n&atilde;o &eacute; alterado.</p>
     <div class="actions">
+        <a class="btn btn-primary" href="{{ url_for('baixar_financeiro_aberto_xlsx') }}">Gerar Excel sem zerar</a>
         {% if perfil_logado == 'admin' %}
         <form method="POST" action="{{ url_for('fechar_financeiro') }}" onsubmit="return confirm('Gerar fechamento e zerar somente o financeiro das ordens de servi&ccedil;o? O estoque n&atilde;o ser&aacute; alterado.')">
             <button class="btn btn-success" type="submit">Gerar fechamento e zerar financeiro das OS</button>
