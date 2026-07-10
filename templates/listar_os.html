@@ -6,9 +6,11 @@
     <div class="actions"><a class="btn btn-success" href="{{ url_for('nova_os') }}">Nova OS</a><a class="btn btn-primary" href="{{ url_for('listar_os') }}">Em andamento</a><a class="btn btn-muted" href="{{ url_for('os_finalizadas') }}">Finalizadas</a></div>
 </div>
 {% for os in os_list %}
-<div class="card">
-    <h2>OS #{{ os.numero_os }}</h2>
-    <span class="status {{ os.status }}">{{ os.status }}</span>
+<div class="card os-card">
+    <div class="os-card-header">
+        <h2>OS #{{ os.numero_os }}</h2>
+        <span class="status {{ os.status }}">{{ os.status }}</span>
+    </div>
     <p><b>Criado por:</b> {{ os.criado_por or '-' }}</p>
     <p><b>Cliente:</b> {{ os.cliente or '-' }} | <b>Carro/modelo:</b> {{ os.carro_modelo or '-' }} | <b>Placa:</b> {{ os.placa or '-' }} | <b>Seguradora:</b> {{ os.seguradora or '-' }}</p>
     <p><b>Tipo de reparo:</b> {{ os.tipo_reparo or '-' }} | <b>Opera&ccedil;&atilde;o:</b> {{ os.tipo_operacao or '-' }} | <b>Ve&iacute;culo de terceiro:</b> {% if os.veiculo_terceiro %}Sim{% else %}N&atilde;o{% endif %}</p>
