@@ -3,7 +3,7 @@
 {% block content %}
 <div class="panel">
     <h1>{% if peca %}Editar pe&ccedil;a{% else %}Nova pe&ccedil;a{% endif %}</h1>
-    <form method="POST" class="form-grid">
+    <form method="POST" class="form-grid" enctype="multipart/form-data">
         <div><label>Nome da pe&ccedil;a</label><input type="text" name="nome" value="{{ peca.nome if peca else '' }}" required></div>
         <div><label>C&oacute;digo</label><input type="text" name="codigo" value="{{ peca.codigo if peca else '' }}"></div>
         <div><label>Fornecedor</label><input type="text" name="fornecedor" value="{{ peca.fornecedor if peca else '' }}"></div>
@@ -11,7 +11,21 @@
         <div><label>Quantidade</label><input type="number" min="0" name="quantidade" value="{{ peca.quantidade if peca else 0 }}"></div>
         <div><label>Estoque m&iacute;nimo</label><input type="number" min="0" name="estoque_minimo" value="{{ peca.estoque_minimo if peca else 0 }}"></div>
         <div><label>Valor unit&aacute;rio</label><input type="number" min="0" step="0.01" name="valor_unitario" value="{{ peca.valor_unitario if peca else 0 }}"></div>
+        <div class="full"><label>Fotos da pe&ccedil;a</label><input type="file" name="fotos" accept="image/*" multiple></div>
         <div class="full actions"><button class="btn btn-success" type="submit">Salvar</button><a class="btn btn-muted" href="{{ url_for('estoque') }}">Voltar</a></div>
     </form>
 </div>
+{% if peca and peca.fotos %}
+<div class="panel">
+    <h2>Fotos da pe&ccedil;a</h2>
+    <div class="photo-grid">
+        {% for foto in peca.fotos %}
+        <div class="photo-item">
+            <img src="{{ url_for('peca_foto', id=foto.id) }}" alt="Foto da pe&ccedil;a {{ peca.nome }}">
+            {% if perfil_logado == 'admin' %}<a class="btn btn-danger" href="{{ url_for('excluir_peca_foto', id=foto.id) }}" onclick="return confirm('Deseja excluir esta foto?')">Excluir foto</a>{% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}

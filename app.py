@@ -29,6 +29,17 @@ if app.config["SQLALCHEMY_DATABASE_URI"].startswith("postgres://"):
 
 db.init_app(app)
 
+
+class EstoquePecaFoto(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    peca_id = db.Column(db.Integer, db.ForeignKey("estoque_peca.id"), nullable=False)
+    filename = db.Column(db.String(255))
+    content_type = db.Column(db.String(80), default="image/jpeg")
+    data = db.Column(db.LargeBinary, nullable=False)
+    criado_em = db.Column(db.DateTime, default=datetime.utcnow)
+
+    peca = db.relationship("EstoquePeca", backref=db.backref("fotos", lazy=True, cascade="all, delete-orphan"))
+
 STATUS_FLOW = ["CRIADA", "VISTORIA", "LIBERADA", "REPARO", "FINALIZADA"]
 TIPOS_REPARO = ["Pequenos reparos", "Troca de pneu/roda", "Lataria e Pintura", "Parabrisa"]
 OPERACOES_OS = ["Venda", "Fornecimento"]
@@ -1255,6 +1266,24 @@ def excluir_para_brisa(id):
 def os_foto(id):
     foto = OSFoto.query.get_or_404(id)
     return Response(foto.data, mimetype=foto.content_type or "image/jpeg")
+
+
+@app.route("/peca_foto/<int:id>")
+@login_required
+def peca_foto(id):
+    foto = EstoquePecaFoto.query.get_or_404(id)
+    return Response(foto.data, mimetype=foto.content_type or "image/jpeg")
+
+
+@app.route("/peca_foto/excluir/<int:id>")
+@admin_required
+def excluir_peca_foto(id):
+    foto = EstoquePecaFoto.query.get_or_404(id)
+    peca_id = foto.peca_id
+    db.session.delete(foto)
+    db.session.commit()
+    flash("Foto removida da peça.", "success")
+    return redirect(url_for("editar_peca", id=peca_id))
 
 
 @app.route("/os_foto/excluir/<int:id>")
