@@ -1,5 +1,79 @@
 {% extends "base.html" %}
-{% block title %}Pe&ccedil;as em estoque
+{% block title %}Pe&ccedil;as em estoque{% endblock %}
+{% block content %}
+<div class="panel">
+    <h1>Pe&ccedil;as em estoque</h1>
+    <p><b>Total de unidades:</b> {{ total_pecas }} | <b>Valor estimado:</b> R$ {{ "%.2f"|format(valor_total) }}</p>
+    <form class="barcode-form" method="GET" action="{{ url_for('estoque') }}">
+        <label for="codigo">Ler c&oacute;digo de barras</label>
+        <p class="scan-hint">Pode passar a pistola em qualquer ponto desta tela. Se preferir, clique no campo abaixo e leia o c&oacute;digo.</p>
+        <div class="barcode-row">
+            <input id="codigo" name="codigo" type="search" value="{{ codigo_lido or '' }}" placeholder="Passe a pistola ou digite o c&oacute;digo" autocomplete="off" inputmode="numeric" autofocus>
+            <button class="btn btn-primary" type="submit">Buscar pe&ccedil;a</button>
+            {% if codigo_lido %}
+            <a class="btn btn-muted" href="{{ url_for('estoque') }}">Limpar</a>
+            {% endif %}
+        </div>
+    </form>
+    {% if peca_encontrada %}
+    <div class="found-box">
+        <b>Pe&ccedil;a encontrada:</b> {{ peca_encontrada.nome }} |
+        <b>C&oacute;digo:</b> {{ peca_encontrada.codigo }} |
+        <b>Qtd.:</b> {{ peca_encontrada.quantidade }} |
+        <b>Local:</b> {{ peca_encontrada.localizacao or '-' }}
+    </div>
+    {% elif codigo_lido %}
+    <div class="found-box found-warning">
+        <b>C&oacute;digo n&atilde;o cadastrado:</b> {{ codigo_lido }}.
+        <div class="actions">
+            <a class="btn btn-success" href="{{ url_for('nova_peca', codigo=codigo_lido, localizacao='Oficina') }}">Cadastrar esta pe&ccedil;a</a>
+        </div>
+    </div>
+    {% endif %}
+    <div class="actions"><a class="btn btn-success" href="{{ url_for('nova_peca') }}">Adicionar pe&ccedil;a</a></div>
+</div>
+<div class="pecas-lista">
+    {% for peca in pecas %}
+    <div class="peca-card {% if peca_encontrada and peca.id == peca_encontrada.id %}linha-encontrada{% endif %}">
+        <div class="peca-foto">
+            {% if peca.fotos %}
+            <img src="{{ url_for('peca_foto', id=peca.fotos[0].id) }}" alt="Foto da pe&ccedil;a {{ peca.nome }}">
+            {% else %}
+            <div class="peca-sem-foto">Sem foto</div>
+            {% endif %}
+        </div>
+        <div class="peca-info">
+            <div class="peca-card-header">
+                <h2>{{ peca.nome }}</h2>
+                {% if peca.estoque_baixo %}<span class="baixo">Estoque baixo</span>{% else %}<span class="ok">OK</span>{% endif %}
+            </div>
+            <div class="peca-dados">
+                <p><b>C&oacute;digo:</b> {{ peca.codigo or '-' }}</p>
+                <p><b>Fornecedor:</b> {{ peca.fornecedor or '-' }}</p>
+                <p><b>Quantidade:</b> {{ peca.quantidade }}</p>
+                <p><b>Estoque m&iacute;nimo:</b> {{ peca.estoque_minimo }}</p>
+                <p><b>Valor unit&aacute;rio:</b> R$ {{ "%.2f"|format(peca.valor_unitario or 0) }}</p>
+                <p><b>Total:</b> R$ {{ "%.2f"|format(peca.valor_total) }}</p>
+                <p><b>Local:</b> {{ peca.localizacao or '-' }}</p>
+                <p><b>Fotos:</b> {{ peca.fotos|length }}</p>
+            </div>
+            {% if peca.fotos|length > 1 %}
+            <div class="photo-strip">
+                {% for foto in peca.fotos[1:5] %}
+                <img src="{{ url_for('peca_foto', id=foto.id) }}" alt="Foto da pe&ccedil;a {{ peca.nome }}">
+                {% endfor %}
+            </div>
+            {% endif %}
+            <div class="actions">
+                <a class="btn btn-primary" href="{{ url_for('editar_peca', id=peca.id) }}">Editar</a>
+                {% if perfil_logado == 'admin' %}<a class="btn btn-danger" href="{{ url_for('excluir_peca', id=peca.id) }}" onclick="return confirm('Deseja excluir esta pe&ccedil;a?')">Excluir</a>{% endif %}
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="panel">Nenhuma pe&ccedil;a cadastrada.</div>
+    {% endfor %}
+</div>
 <script>
 (function () {
     const form = document.querySelector(".barcode-form");
@@ -57,73 +131,4 @@
     });
 })();
 </script>
-
-{% endblock %}
-{% block content %}
-<div class="panel">
-    <h1>Pe&ccedil;as em estoque</h1>
-    <p><b>Total de unidades:</b> {{ total_pecas }} | <b>Valor estimado:</b> R$ {{ "%.2f"|format(valor_total) }}</p>
-    <form class="barcode-form" method="GET" action="{{ url_for('estoque') }}">
-        <label for="codigo">Ler c&oacute;digo de barras</label>
-        <p class="scan-hint">Pode passar a pistola em qualquer ponto desta tela. Se preferir, clique no campo abaixo e leia o c&oacute;digo.</p>
-        <div class="barcode-row">
-            <input id="codigo" name="codigo" type="search" value="{{ codigo_lido or '' }}" placeholder="Passe a pistola ou digite o c&oacute;digo" autocomplete="off" inputmode="numeric" autofocus>
-            <button class="btn btn-primary" type="submit">Buscar pe&ccedil;a</button>
-            {% if codigo_lido %}
-            <a class="btn btn-muted" href="{{ url_for('estoque') }}">Limpar</a>
-            {% endif %}
-        </div>
-    </form>
-    {% if peca_encontrada %}
-    <div class="found-box">
-        <b>Pe&ccedil;a encontrada:</b> {{ peca_encontrada.nome }} |
-        <b>C&oacute;digo:</b> {{ peca_encontrada.codigo }} |
-        <b>Qtd.:</b> {{ peca_encontrada.quantidade }} |
-        <b>Local:</b> {{ peca_encontrada.localizacao or '-' }}
-    </div>
-    {% endif %}
-    <div class="actions"><a class="btn btn-success" href="{{ url_for('nova_peca') }}">Adicionar pe&ccedil;a</a></div>
-</div>
-<div class="pecas-lista">
-    {% for peca in pecas %}
-    <div class="peca-card {% if peca_encontrada and peca.id == peca_encontrada.id %}linha-encontrada{% endif %}">
-        <div class="peca-foto">
-            {% if peca.fotos %}
-            <img src="{{ url_for('peca_foto', id=peca.fotos[0].id) }}" alt="Foto da pe&ccedil;a {{ peca.nome }}">
-            {% else %}
-            <div class="peca-sem-foto">Sem foto</div>
-            {% endif %}
-        </div>
-        <div class="peca-info">
-            <div class="peca-card-header">
-                <h2>{{ peca.nome }}</h2>
-                {% if peca.estoque_baixo %}<span class="baixo">Estoque baixo</span>{% else %}<span class="ok">OK</span>{% endif %}
-            </div>
-            <div class="peca-dados">
-                <p><b>C&oacute;digo:</b> {{ peca.codigo or '-' }}</p>
-                <p><b>Fornecedor:</b> {{ peca.fornecedor or '-' }}</p>
-                <p><b>Quantidade:</b> {{ peca.quantidade }}</p>
-                <p><b>Estoque m&iacute;nimo:</b> {{ peca.estoque_minimo }}</p>
-                <p><b>Valor unit&aacute;rio:</b> R$ {{ "%.2f"|format(peca.valor_unitario or 0) }}</p>
-                <p><b>Total:</b> R$ {{ "%.2f"|format(peca.valor_total) }}</p>
-                <p><b>Local:</b> {{ peca.localizacao or '-' }}</p>
-                <p><b>Fotos:</b> {{ peca.fotos|length }}</p>
-            </div>
-            {% if peca.fotos|length > 1 %}
-            <div class="photo-strip">
-                {% for foto in peca.fotos[1:5] %}
-                <img src="{{ url_for('peca_foto', id=foto.id) }}" alt="Foto da pe&ccedil;a {{ peca.nome }}">
-                {% endfor %}
-            </div>
-            {% endif %}
-            <div class="actions">
-                <a class="btn btn-primary" href="{{ url_for('editar_peca', id=peca.id) }}">Editar</a>
-                {% if perfil_logado == 'admin' %}<a class="btn btn-danger" href="{{ url_for('excluir_peca', id=peca.id) }}" onclick="return confirm('Deseja excluir esta pe&ccedil;a?')">Excluir</a>{% endif %}
-            </div>
-        </div>
-    </div>
-    {% else %}
-    <div class="panel">Nenhuma pe&ccedil;a cadastrada.</div>
-    {% endfor %}
-</div>
 {% endblock %}

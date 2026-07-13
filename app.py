@@ -1151,7 +1151,12 @@ def nova_peca():
         flash("Pe\u00e7a adicionada ao estoque.", "success")
         return redirect(url_for("estoque"))
 
-    return render_template("form_peca.html", peca=None)
+    peca = EstoquePeca(
+        nome=(request.args.get("nome") or "").strip(),
+        codigo=(request.args.get("codigo") or "").strip(),
+        localizacao=(request.args.get("localizacao") or "Oficina").strip(),
+    )
+    return render_template("form_peca.html", peca=peca)
 
 
 @app.route("/estoque/editar/<int:id>", methods=["GET", "POST"])
