@@ -67,6 +67,11 @@
         .btn-muted { background: #6b7280; }
         .btn-warning { background: #d97706; }
         .actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+        .barcode-form { margin: 14px 0; }
+        .barcode-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .barcode-row input { max-width: 420px; }
+        .found-box { margin: 12px 0; padding: 12px; border-radius: 7px; background: #dcfce7; color: #14532d; }
+        .linha-encontrada { outline: 3px solid #22c55e; background: #f0fdf4; }
         .filter-form { margin: 12px 0 18px; }
         .filter-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
         .filter-row input { max-width: 320px; }
@@ -90,7 +95,7 @@
         .flash-danger { background: #fee2e2; color: #991b1b; }
         .flash-warning { background: #fef3c7; color: #92400e; }
         .flash-info { background: #dbeafe; color: #1e40af; }
-        @media (max-width: 760px) { .form-grid { grid-template-columns: 1fr; } .filter-row input { max-width: none; } .menu a, .usuario a { display: inline-block; margin-bottom: 8px; } .container { padding: 16px; } .prazo-item { align-items: flex-start; flex-direction: column; } .prazo-item span { white-space: normal; } }
+        @media (max-width: 760px) { .form-grid { grid-template-columns: 1fr; } .filter-row input, .barcode-row input { max-width: none; } .menu a, .usuario a { display: inline-block; margin-bottom: 8px; } .container { padding: 16px; } .prazo-item { align-items: flex-start; flex-direction: column; } .prazo-item span { white-space: normal; } }
     </style>
 </head>
 <body>

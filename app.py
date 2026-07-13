@@ -1094,10 +1094,28 @@ def avancar(id):
 @app.route("/estoque")
 @login_required
 def estoque():
-    pecas = EstoquePeca.query.order_by(EstoquePeca.nome).all()
+    codigo_lido = (request.args.get("codigo") or "").strip()
+    query = EstoquePeca.query
+    peca_encontrada = None
+    if codigo_lido:
+        peca_encontrada = EstoquePeca.query.filter(EstoquePeca.codigo == codigo_lido).first()
+        if peca_encontrada:
+            query = query.filter(EstoquePeca.id == peca_encontrada.id)
+        else:
+            query = query.filter(EstoquePeca.codigo == codigo_lido)
+            flash("Nenhuma peça encontrada com esse código de barras.", "warning")
+
+    pecas = query.order_by(EstoquePeca.nome).all()
     total_pecas = sum(peca.quantidade or 0 for peca in pecas)
     valor_total = sum((peca.quantidade or 0) * (peca.valor_unitario or 0) for peca in pecas)
-    return render_template("estoque.html", pecas=pecas, total_pecas=total_pecas, valor_total=valor_total)
+    return render_template(
+        "estoque.html",
+        pecas=pecas,
+        total_pecas=total_pecas,
+        valor_total=valor_total,
+        codigo_lido=codigo_lido,
+        peca_encontrada=peca_encontrada,
+    )
 
 
 @app.route("/estoque/nova", methods=["GET", "POST"])

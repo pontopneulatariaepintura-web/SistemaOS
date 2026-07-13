@@ -4,12 +4,30 @@
 <div class="panel">
     <h1>Pe&ccedil;as em estoque</h1>
     <p><b>Total de unidades:</b> {{ total_pecas }} | <b>Valor estimado:</b> R$ {{ "%.2f"|format(valor_total) }}</p>
+    <form class="barcode-form" method="GET" action="{{ url_for('estoque') }}">
+        <label for="codigo">Ler c&oacute;digo de barras</label>
+        <div class="barcode-row">
+            <input id="codigo" name="codigo" type="search" value="{{ codigo_lido or '' }}" placeholder="Passe a pistola ou digite o c&oacute;digo" autocomplete="off" autofocus>
+            <button class="btn btn-primary" type="submit">Buscar pe&ccedil;a</button>
+            {% if codigo_lido %}
+            <a class="btn btn-muted" href="{{ url_for('estoque') }}">Limpar</a>
+            {% endif %}
+        </div>
+    </form>
+    {% if peca_encontrada %}
+    <div class="found-box">
+        <b>Pe&ccedil;a encontrada:</b> {{ peca_encontrada.nome }} |
+        <b>C&oacute;digo:</b> {{ peca_encontrada.codigo }} |
+        <b>Qtd.:</b> {{ peca_encontrada.quantidade }} |
+        <b>Local:</b> {{ peca_encontrada.localizacao or '-' }}
+    </div>
+    {% endif %}
     <div class="actions"><a class="btn btn-success" href="{{ url_for('nova_peca') }}">Adicionar pe&ccedil;a</a></div>
 </div>
 <table>
     <tr><th>Pe&ccedil;a</th><th>C&oacute;digo</th><th>Fornecedor</th><th>Qtd.</th><th>M&iacute;nimo</th><th>Valor un.</th><th>Total</th><th>Local</th><th>Status</th><th>A&ccedil;&otilde;es</th></tr>
     {% for peca in pecas %}
-    <tr>
+    <tr class="{% if peca_encontrada and peca.id == peca_encontrada.id %}linha-encontrada{% endif %}">
         <td>{{ peca.nome }}</td>
         <td>{{ peca.codigo or '-' }}</td>
         <td>{{ peca.fornecedor or '-' }}</td>
