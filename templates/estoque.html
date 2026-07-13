@@ -1,13 +1,73 @@
 {% extends "base.html" %}
-{% block title %}Pe&ccedil;as em estoque{% endblock %}
+{% block title %}Pe&ccedil;as em estoque
+<script>
+(function () {
+    const form = document.querySelector(".barcode-form");
+    const input = document.getElementById("codigo");
+    if (!form || !input) return;
+
+    function focusScannerField() {
+        if (document.activeElement && ["INPUT", "TEXTAREA", "SELECT"].includes(document.activeElement.tagName) && document.activeElement !== input) {
+            return;
+        }
+        input.focus();
+        input.select();
+    }
+
+    window.addEventListener("load", focusScannerField);
+    document.addEventListener("click", function (event) {
+        if (!event.target.closest("a, button, input, textarea, select")) {
+            focusScannerField();
+        }
+    });
+
+    let buffer = "";
+    let lastKeyAt = 0;
+    let timer = null;
+
+    document.addEventListener("keydown", function (event) {
+        if (event.ctrlKey || event.altKey || event.metaKey) return;
+
+        const active = document.activeElement;
+        const typingElsewhere = active && ["TEXTAREA", "SELECT"].includes(active.tagName);
+        if (typingElsewhere) return;
+
+        const now = Date.now();
+        if (now - lastKeyAt > 120) buffer = "";
+        lastKeyAt = now;
+
+        if (event.key === "Enter") {
+            const scanned = (buffer || input.value || "").trim();
+            if (scanned.length >= 3) {
+                event.preventDefault();
+                input.value = scanned;
+                form.submit();
+            }
+            buffer = "";
+            return;
+        }
+
+        if (event.key.length === 1) {
+            buffer += event.key;
+            clearTimeout(timer);
+            timer = setTimeout(function () {
+                buffer = "";
+            }, 250);
+        }
+    });
+})();
+</script>
+
+{% endblock %}
 {% block content %}
 <div class="panel">
     <h1>Pe&ccedil;as em estoque</h1>
     <p><b>Total de unidades:</b> {{ total_pecas }} | <b>Valor estimado:</b> R$ {{ "%.2f"|format(valor_total) }}</p>
     <form class="barcode-form" method="GET" action="{{ url_for('estoque') }}">
         <label for="codigo">Ler c&oacute;digo de barras</label>
+        <p class="scan-hint">Pode passar a pistola em qualquer ponto desta tela. Se preferir, clique no campo abaixo e leia o c&oacute;digo.</p>
         <div class="barcode-row">
-            <input id="codigo" name="codigo" type="search" value="{{ codigo_lido or '' }}" placeholder="Passe a pistola ou digite o c&oacute;digo" autocomplete="off" autofocus>
+            <input id="codigo" name="codigo" type="search" value="{{ codigo_lido or '' }}" placeholder="Passe a pistola ou digite o c&oacute;digo" autocomplete="off" inputmode="numeric" autofocus>
             <button class="btn btn-primary" type="submit">Buscar pe&ccedil;a</button>
             {% if codigo_lido %}
             <a class="btn btn-muted" href="{{ url_for('estoque') }}">Limpar</a>
