@@ -12,7 +12,11 @@
         <div><label>Estoque m&iacute;nimo</label><input type="number" min="0" name="estoque_minimo" value="{{ peca.estoque_minimo if peca else 0 }}"></div>
         <div><label>Valor unit&aacute;rio</label><input type="number" min="0" step="0.01" name="valor_unitario" value="{{ peca.valor_unitario if peca else 0 }}"></div>
         <div class="full"><label>Fotos da pe&ccedil;a</label><input type="file" name="fotos" accept="image/*" multiple></div>
-        <div class="full actions"><button class="btn btn-success" type="submit">Salvar</button><a class="btn btn-muted" href="{{ url_for('estoque') }}">Voltar</a></div>
+        <div class="full actions">
+            <button class="btn btn-success" type="submit">Salvar</button>
+            {% if peca and peca.id %}<a class="btn btn-warning" href="{{ url_for('etiqueta_peca', id=peca.id) }}" target="_blank" rel="noopener">Imprimir etiqueta</a>{% endif %}
+            <a class="btn btn-muted" href="{{ url_for('estoque') }}">Voltar</a>
+        </div>
     </form>
 </div>
 {% if peca and peca.fotos %}

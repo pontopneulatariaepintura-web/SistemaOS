@@ -1,11 +1,13 @@
 from datetime import timedelta, datetime
+import csv
 from functools import wraps
 from html import escape
-from io import BytesIO
+from io import BytesIO, StringIO
 import os
+import unicodedata
 from zipfile import ZIP_DEFLATED, ZipFile
 
-from flask import Flask, Response, abort, flash, redirect, render_template, request, send_file, session, url_for
+from flask import Flask, Response, abort, flash, redirect, render_template, render_template_string, request, send_file, session, url_for
 from sqlalchemy import inspect, text
 from werkzeug.security import check_password_hash, generate_password_hash
 
@@ -39,6 +41,10 @@ class EstoquePecaFoto(db.Model):
     criado_em = db.Column(db.DateTime, default=datetime.utcnow)
 
     peca = db.relationship("EstoquePeca", backref=db.backref("fotos", lazy=True, cascade="all, delete-orphan"))
+
+ETIQUETA_PECA_TEMPLATE = '<!DOCTYPE html>\n<html lang="pt-br">\n<head>\n    <meta charset="UTF-8">\n    <title>Etiqueta {{ peca.nome }}</title>\n    <style>\n        @page { size: 50mm 30mm; margin: 2mm; }\n        * { box-sizing: border-box; }\n        body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #000; }\n        .etiqueta { width: 46mm; height: 26mm; display: flex; flex-direction: column; justify-content: center; gap: 1.2mm; overflow: hidden; }\n        .nome { font-size: 11px; font-weight: 700; line-height: 1.1; max-height: 8mm; overflow: hidden; }\n        .meta { font-size: 8px; line-height: 1.1; }\n        .barcode { height: 10mm; display: flex; align-items: stretch; gap: 0; }\n        .bar { height: 10mm; display: inline-block; }\n        .black { background: #000; }\n        .white { background: #fff; }\n        .codigo { font-size: 8px; text-align: center; letter-spacing: 1px; }\n        .no-print { margin: 12px; }\n        .btn { display: inline-block; padding: 9px 14px; border-radius: 7px; background: #2563eb; color: white; text-decoration: none; font-weight: bold; border: 0; cursor: pointer; }\n        @media print { .no-print { display: none; } }\n    </style>\n</head>\n<body>\n    <div class="no-print">\n        <button class="btn" onclick="window.print()">Imprimir etiqueta</button>\n    </div>\n    <div class="etiqueta">\n        <div class="nome">{{ peca.nome }}</div>\n        <div class="meta">Local: {{ peca.localizacao or \'Oficina\' }} | Qtd: {{ peca.quantidade or 0 }}</div>\n        <div class="barcode" aria-label="Codigo de barras {{ codigo_barra }}">\n            {% for barra in barras %}\n            <span class="bar {% if barra.preta %}black{% else %}white{% endif %}" style="width: {{ barra.largura }}px"></span>\n            {% endfor %}\n        </div>\n        <div class="codigo">{{ codigo_barra }}</div>\n    </div>\n    {% if auto %}\n    <script>\n        window.addEventListener("load", function () {\n            setTimeout(function () { window.print(); }, 400);\n        });\n    </script>\n    {% endif %}\n</body>\n</html>\n'
+
+IMPORTAR_PECAS_TEMPLATE = '{% extends "base.html" %}\n{% block title %}Importar pe&ccedil;as{% endblock %}\n{% block content %}\n<div class="panel">\n    <h1>Importar pe&ccedil;as</h1>\n    <p>Envie um arquivo CSV exportado do sistema antigo. O sistema aceita colunas como nome, c&oacute;digo, fornecedor, quantidade, estoque m&iacute;nimo, valor unit&aacute;rio e localiza&ccedil;&atilde;o.</p>\n    <form method="POST" enctype="multipart/form-data" class="form-grid">\n        <div class="full"><label>Arquivo CSV</label><input type="file" name="arquivo" accept=".csv,text/csv" required></div>\n        <div class="full actions"><button class="btn btn-success" type="submit">Importar</button><a class="btn btn-muted" href="{{ url_for(\'estoque\') }}">Voltar</a></div>\n    </form>\n</div>\n<div class="panel">\n    <h2>Modelo de colunas</h2>\n    <p><b>nome;codigo;fornecedor;quantidade;estoque_minimo;valor_unitario;localizacao</b></p>\n    <p>Se a localiza&ccedil;&atilde;o vier vazia, ser&aacute; usada como <b>Oficina</b>.</p>\n</div>\n{% endblock %}\n'
 
 STATUS_FLOW = ["CRIADA", "VISTORIA", "LIBERADA", "REPARO", "FINALIZADA"]
 TIPOS_REPARO = ["Pequenos reparos", "Troca de pneu/roda", "Lataria e Pintura", "Parabrisa"]
@@ -403,6 +409,76 @@ def save_os_fotos(os_id):
             )
         )
     db.session.commit()
+
+
+def parse_int_estoque(valor):
+    try:
+        return int(float(str(valor or "0").replace(",", ".")))
+    except (TypeError, ValueError):
+        return 0
+
+
+def parse_float_estoque(valor):
+    texto = str(valor or "0").strip()
+    if "," in texto:
+        texto = texto.replace(".", "").replace(",", ".")
+    try:
+        return float(texto)
+    except (TypeError, ValueError):
+        return 0
+
+
+def salvar_fotos_peca(peca_id):
+    fotos = request.files.getlist("fotos")
+    for foto in fotos:
+        if not foto or not foto.filename:
+            continue
+        if not (foto.content_type or "").startswith("image/"):
+            flash("Somente arquivos de imagem foram aceitos nas fotos da peça.", "warning")
+            continue
+        data = foto.read()
+        if not data:
+            continue
+        db.session.add(
+            EstoquePecaFoto(
+                peca_id=peca_id,
+                filename=foto.filename,
+                content_type=foto.content_type or "image/jpeg",
+                data=data,
+            )
+        )
+    db.session.commit()
+
+
+CODE39_PATTERNS = {
+    "0": "nnnwwnwnn", "1": "wnnwnnnnw", "2": "nnwwnnnnw", "3": "wnwwnnnnn", "4": "nnnwwnnnw",
+    "5": "wnnwwnnnn", "6": "nnwwwnnnn", "7": "nnnwnnwnw", "8": "wnnwnnwnn", "9": "nnwwnnwnn",
+    "A": "wnnnnwnnw", "B": "nnwnnwnnw", "C": "wnwnnwnnn", "D": "nnnnwwnnw", "E": "wnnnwwnnn",
+    "F": "nnwnwwnnn", "G": "nnnnnwwnw", "H": "wnnnnwwnn", "I": "nnwnnwwnn", "J": "nnnnwwwnn",
+    "K": "wnnnnnnww", "L": "nnwnnnnww", "M": "wnwnnnnwn", "N": "nnnnwnnww", "O": "wnnnwnnwn",
+    "P": "nnwnwnnwn", "Q": "nnnnnnwww", "R": "wnnnnnwwn", "S": "nnwnnnwwn", "T": "nnnnwnwwn",
+    "U": "wwnnnnnnw", "V": "nwwnnnnnw", "W": "wwwnnnnnn", "X": "nwnnwnnnw", "Y": "wwnnwnnnn",
+    "Z": "nwwnwnnnn", "-": "nwnnnnwnw", ".": "wwnnnnwnn", " ": "nwwnnnwnn", "*": "nwnnwnwnn",
+    "$": "nwnwnwnnn", "/": "nwnwnnnwn", "+": "nwnnnwnwn", "%": "nnnwnwnwn",
+}
+
+
+def code39_barras(codigo):
+    codigo_limpo = "".join(ch for ch in str(codigo or "").upper() if ch in CODE39_PATTERNS and ch != "*")
+    if not codigo_limpo:
+        codigo_limpo = "SEM CODIGO"
+    barras = []
+    for caractere in f"*{codigo_limpo}*":
+        pattern = CODE39_PATTERNS[caractere]
+        for index, largura in enumerate(pattern):
+            barras.append({"preta": index % 2 == 0, "largura": 3 if largura == "w" else 1})
+        barras.append({"preta": False, "largura": 1})
+    return codigo_limpo, barras
+
+
+def normalizar_coluna(valor):
+    texto = unicodedata.normalize("NFKD", str(valor or "")).encode("ascii", "ignore").decode("ascii")
+    return "".join(ch for ch in texto.lower().strip() if ch.isalnum())
 
 
 def montar_alertas_prazo():
@@ -1148,8 +1224,9 @@ def nova_peca():
 
         db.session.add(peca)
         db.session.commit()
-        flash("Pe\u00e7a adicionada ao estoque.", "success")
-        return redirect(url_for("estoque"))
+        salvar_fotos_peca(peca.id)
+        flash("Peça adicionada ao estoque. Etiqueta pronta para imprimir.", "success")
+        return redirect(url_for("etiqueta_peca", id=peca.id, auto=1))
 
     peca = EstoquePeca(
         nome=(request.args.get("nome") or "").strip(),
@@ -1173,6 +1250,7 @@ def editar_peca(id):
         peca.valor_unitario = float(request.form.get("valor_unitario") or 0)
         peca.localizacao = request.form.get("localizacao", "").strip()
         db.session.commit()
+        salvar_fotos_peca(peca.id)
         flash("Pe\u00e7a atualizada.", "success")
         return redirect(url_for("estoque"))
 
@@ -1187,6 +1265,92 @@ def excluir_peca(id):
     db.session.commit()
     flash("Pe\u00e7a removida do estoque.", "success")
     return redirect(url_for("estoque"))
+
+
+@app.route("/estoque/etiqueta/<int:id>")
+@login_required
+def etiqueta_peca(id):
+    peca = EstoquePeca.query.get_or_404(id)
+    codigo_barra, barras = code39_barras(peca.codigo or peca.id)
+    auto = request.args.get("auto") == "1"
+    return render_template_string(ETIQUETA_PECA_TEMPLATE, peca=peca, codigo_barra=codigo_barra, barras=barras, auto=auto)
+
+
+@app.route("/estoque/importar", methods=["GET", "POST"])
+@admin_required
+def importar_pecas():
+    if request.method == "POST":
+        arquivo = request.files.get("arquivo")
+        if not arquivo or not arquivo.filename:
+            flash("Selecione um arquivo CSV para importar.", "danger")
+            return redirect(url_for("importar_pecas"))
+
+        conteudo = arquivo.read()
+        try:
+            texto_csv = conteudo.decode("utf-8-sig")
+        except UnicodeDecodeError:
+            texto_csv = conteudo.decode("latin-1", errors="replace")
+
+        amostra = texto_csv[:2048]
+        try:
+            dialect = csv.Sniffer().sniff(amostra, delimiters=";,")
+        except csv.Error:
+            dialect = csv.excel
+            dialect.delimiter = ";"
+
+        leitor = csv.DictReader(StringIO(texto_csv), dialect=dialect)
+        criadas = atualizadas = ignoradas = 0
+        aliases = {
+            "nome": "nome", "peca": "nome", "descricao": "nome", "produto": "nome",
+            "codigo": "codigo", "codigodebarras": "codigo", "codbarra": "codigo", "barras": "codigo", "sku": "codigo",
+            "fornecedor": "fornecedor", "marca": "fornecedor",
+            "quantidade": "quantidade", "qtd": "quantidade", "estoque": "quantidade",
+            "estoqueminimo": "estoque_minimo", "minimo": "estoque_minimo",
+            "valorunitario": "valor_unitario", "valor": "valor_unitario", "preco": "valor_unitario", "custounitario": "valor_unitario",
+            "localizacao": "localizacao", "local": "localizacao",
+        }
+
+        for linha in leitor:
+            dados = {}
+            for coluna, valor in linha.items():
+                chave = aliases.get(normalizar_coluna(coluna))
+                if chave:
+                    dados[chave] = (valor or "").strip()
+
+            nome = dados.get("nome", "")
+            codigo = dados.get("codigo", "")
+            if not nome and not codigo:
+                ignoradas += 1
+                continue
+            if not nome:
+                nome = f"Peça {codigo}"
+
+            peca = None
+            if codigo:
+                peca = EstoquePeca.query.filter_by(codigo=codigo).first()
+            if not peca:
+                peca = EstoquePeca.query.filter_by(nome=nome).first()
+
+            if peca:
+                atualizadas += 1
+            else:
+                peca = EstoquePeca()
+                db.session.add(peca)
+                criadas += 1
+
+            peca.nome = nome
+            peca.codigo = codigo
+            peca.fornecedor = dados.get("fornecedor", peca.fornecedor or "")
+            peca.quantidade = parse_int_estoque(dados.get("quantidade"))
+            peca.estoque_minimo = parse_int_estoque(dados.get("estoque_minimo"))
+            peca.valor_unitario = parse_float_estoque(dados.get("valor_unitario"))
+            peca.localizacao = dados.get("localizacao") or peca.localizacao or "Oficina"
+
+        db.session.commit()
+        flash(f"Importação concluída: {criadas} peças criadas, {atualizadas} atualizadas e {ignoradas} ignoradas.", "success")
+        return redirect(url_for("estoque"))
+
+    return render_template_string(IMPORTAR_PECAS_TEMPLATE)
 
 
 @app.route("/para_brisas")

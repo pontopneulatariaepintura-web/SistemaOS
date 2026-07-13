@@ -30,7 +30,10 @@
         </div>
     </div>
     {% endif %}
-    <div class="actions"><a class="btn btn-success" href="{{ url_for('nova_peca') }}">Adicionar pe&ccedil;a</a></div>
+    <div class="actions">
+        <a class="btn btn-success" href="{{ url_for('nova_peca') }}">Adicionar pe&ccedil;a</a>
+        {% if perfil_logado == 'admin' %}<a class="btn btn-primary" href="{{ url_for('importar_pecas') }}">Importar pe&ccedil;as</a>{% endif %}
+    </div>
 </div>
 <div class="pecas-lista">
     {% for peca in pecas %}
@@ -66,6 +69,7 @@
             {% endif %}
             <div class="actions">
                 <a class="btn btn-primary" href="{{ url_for('editar_peca', id=peca.id) }}">Editar</a>
+                <a class="btn btn-warning" href="{{ url_for('etiqueta_peca', id=peca.id) }}" target="_blank" rel="noopener">Etiqueta</a>
                 {% if perfil_logado == 'admin' %}<a class="btn btn-danger" href="{{ url_for('excluir_peca', id=peca.id) }}" onclick="return confirm('Deseja excluir esta pe&ccedil;a?')">Excluir</a>{% endif %}
             </div>
         </div>
