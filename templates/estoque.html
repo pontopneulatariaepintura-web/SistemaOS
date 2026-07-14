@@ -34,6 +34,12 @@
         <a class="btn btn-success" href="{{ url_for('nova_peca') }}">Adicionar pe&ccedil;a</a>
         {% if perfil_logado == 'admin' %}<a class="btn btn-primary" href="{{ url_for('importar_pecas') }}">Importar pe&ccedil;as</a>{% endif %}
     </div>
+    {% if perfil_logado == 'admin' %}
+    <form class="danger-zone" method="POST" action="{{ url_for('zerar_estoque') }}" onsubmit="return confirmarZerarEstoque(this);">
+        <input type="hidden" name="confirmacao" value="">
+        <button class="btn btn-danger" type="submit">Zerar estoque</button>
+    </form>
+    {% endif %}
 </div>
 <div class="pecas-lista">
     {% for peca in pecas %}

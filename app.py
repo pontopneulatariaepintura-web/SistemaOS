@@ -1267,6 +1267,23 @@ def excluir_peca(id):
     return redirect(url_for("estoque"))
 
 
+@app.route("/estoque/zerar", methods=["POST"])
+@admin_required
+def zerar_estoque():
+    confirmacao = (request.form.get("confirmacao") or "").strip().upper()
+    if confirmacao != "ZERAR ESTOQUE":
+        flash("Para apagar todo o estoque, digite ZERAR ESTOQUE na confirmação.", "danger")
+        return redirect(url_for("estoque"))
+
+    total_pecas = EstoquePeca.query.count()
+    total_fotos = EstoquePecaFoto.query.count()
+    EstoquePecaFoto.query.delete(synchronize_session=False)
+    EstoquePeca.query.delete(synchronize_session=False)
+    db.session.commit()
+    flash(f"Estoque zerado: {total_pecas} peça(s) e {total_fotos} foto(s) removidas.", "success")
+    return redirect(url_for("estoque"))
+
+
 @app.route("/estoque/etiqueta/<int:id>")
 @login_required
 def etiqueta_peca(id):
