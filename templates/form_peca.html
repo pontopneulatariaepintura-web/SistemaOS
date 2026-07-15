@@ -7,19 +7,14 @@
         <div><label>Nome da pe&ccedil;a</label><input type="text" name="nome" value="{{ peca.nome if peca else '' }}" required></div>
         <div><label>C&oacute;digo</label><input type="text" name="codigo" value="{{ peca.codigo if peca else '' }}"></div>
         <div><label>Marca</label><input type="text" name="fornecedor" value="{{ peca.fornecedor if peca else '' }}"></div>
-        <div><label>Localiza&ccedil;&atilde;o</label><input type="text" name="localizacao" value="{{ peca.localizacao if peca else '' }}"></div>
         <div>
-            <label>Condi&ccedil;&atilde;o da pe&ccedil;a</label>
+            <label>Condi&ccedil;&atilde;o de pe&ccedil;a</label>
             <select name="condicao">
-                <option value="Nova" {% if (peca.condicao if peca else 'Nova') == 'Nova' %}selected{% endif %}>Nova</option>
-                <option value="Usada" {% if peca and peca.condicao == 'Usada' %}selected{% endif %}>Usada</option>
-            </select>
-        </div>
-        <div>
-            <label>Originalidade</label>
-            <select name="originalidade">
-                <option value="Original" {% if (peca.originalidade if peca else 'Original') == 'Original' %}selected{% endif %}>Original</option>
-                <option value="N&atilde;o original" {% if peca and peca.originalidade == 'N&atilde;o original' %}selected{% endif %}>N&atilde;o original</option>
+                <option value="Original" {% if (peca.condicao if peca else 'Original') == 'Original' %}selected{% endif %}>Original</option>
+                <option value="Pe&ccedil;a paralela" {% if peca and peca.condicao == 'Pe&ccedil;a paralela' %}selected{% endif %}>Pe&ccedil;a paralela</option>
+                <option value="Gen&eacute;rica" {% if peca and peca.condicao == 'Gen&eacute;rica' %}selected{% endif %}>Gen&eacute;rica</option>
+                <option value="Alternativa" {% if peca and peca.condicao == 'Alternativa' %}selected{% endif %}>Alternativa</option>
+                <option value="Similar" {% if peca and peca.condicao == 'Similar' %}selected{% endif %}>Similar</option>
             </select>
         </div>
         <div><label>Quantidade</label><input type="number" min="0" name="quantidade" value="{{ peca.quantidade if peca else 0 }}"></div>

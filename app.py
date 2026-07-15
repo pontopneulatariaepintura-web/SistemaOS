@@ -495,23 +495,23 @@ def aplicar_info_extra_pecas(pecas):
     extras = {row["id"]: row for row in rows}
     for peca in pecas:
         extra = extras.get(peca.id, {})
-        peca.condicao = extra.get("condicao") or "Nova"
-        peca.originalidade = extra.get("originalidade") or "Original"
+        peca.condicao = extra.get("condicao") or "Original"
+        peca.originalidade = extra.get("originalidade") or ""
     return pecas
 
 
 def aplicar_info_extra_peca(peca):
     if not peca or not getattr(peca, "id", None):
         if peca:
-            peca.condicao = getattr(peca, "condicao", None) or "Nova"
-            peca.originalidade = getattr(peca, "originalidade", None) or "Original"
+            peca.condicao = getattr(peca, "condicao", None) or "Original"
+            peca.originalidade = getattr(peca, "originalidade", None) or ""
         return peca
     row = db.session.execute(
         text("SELECT condicao, originalidade FROM estoque_peca WHERE id = :id"),
         {"id": peca.id},
     ).mappings().first()
-    peca.condicao = (row or {}).get("condicao") or "Nova"
-    peca.originalidade = (row or {}).get("originalidade") or "Original"
+    peca.condicao = (row or {}).get("condicao") or "Original"
+    peca.originalidade = (row or {}).get("originalidade") or ""
     return peca
 
 
@@ -520,8 +520,8 @@ def salvar_info_extra_peca(peca_id, condicao, originalidade):
         text("UPDATE estoque_peca SET condicao = :condicao, originalidade = :originalidade WHERE id = :id"),
         {
             "id": peca_id,
-            "condicao": (condicao or "Nova").strip(),
-            "originalidade": (originalidade or "Original").strip(),
+            "condicao": (condicao or "Original").strip(),
+            "originalidade": (originalidade or "").strip(),
         },
     )
     db.session.commit()
@@ -1268,10 +1268,10 @@ def nova_peca():
             quantidade=int(request.form.get("quantidade") or 0),
             estoque_minimo=int(request.form.get("estoque_minimo") or 0),
             valor_unitario=float(request.form.get("valor_unitario") or 0),
-            localizacao=request.form.get("localizacao", "").strip(),
+            localizacao="Oficina",
         )
-        peca.condicao = request.form.get("condicao", "Nova").strip()
-        peca.originalidade = request.form.get("originalidade", "Original").strip()
+        peca.condicao = request.form.get("condicao", "Original").strip()
+        peca.originalidade = ""
         if not peca.nome:
             flash("Informe o nome da pe\u00e7a.", "danger")
             return render_template("form_peca.html", peca=peca)
@@ -1286,10 +1286,10 @@ def nova_peca():
     peca = EstoquePeca(
         nome=(request.args.get("nome") or "").strip(),
         codigo=(request.args.get("codigo") or "").strip(),
-        localizacao=(request.args.get("localizacao") or "Oficina").strip(),
+        localizacao="Oficina",
     )
-    peca.condicao = "Nova"
-    peca.originalidade = "Original"
+    peca.condicao = "Original"
+    peca.originalidade = ""
     return render_template("form_peca.html", peca=peca)
 
 
@@ -1305,9 +1305,9 @@ def editar_peca(id):
         peca.quantidade = int(request.form.get("quantidade") or 0)
         peca.estoque_minimo = int(request.form.get("estoque_minimo") or 0)
         peca.valor_unitario = float(request.form.get("valor_unitario") or 0)
-        peca.localizacao = request.form.get("localizacao", "").strip()
-        peca.condicao = request.form.get("condicao", "Nova").strip()
-        peca.originalidade = request.form.get("originalidade", "Original").strip()
+        peca.localizacao = peca.localizacao or "Oficina"
+        peca.condicao = request.form.get("condicao", "Original").strip()
+        peca.originalidade = ""
         db.session.commit()
         salvar_info_extra_peca(peca.id, peca.condicao, peca.originalidade)
         salvar_fotos_peca(peca.id)
@@ -1376,8 +1376,7 @@ def importar_pecas():
             "nome": "nome", "peca": "nome", "descricao": "nome", "produto": "nome",
             "codigo": "codigo", "codigodebarras": "codigo", "codbarra": "codigo", "barras": "codigo", "sku": "codigo",
             "fornecedor": "fornecedor", "marca": "fornecedor",
-            "condicao": "condicao", "estado": "condicao", "novausada": "condicao", "novousado": "condicao",
-            "originalidade": "originalidade", "original": "originalidade", "originalounao": "originalidade",
+            "condicao": "condicao", "estado": "condicao", "tipopeca": "condicao", "originalidade": "condicao", "original": "condicao", "originalounao": "condicao",
             "quantidade": "quantidade", "qtd": "quantidade", "estoque": "quantidade",
             "estoqueminimo": "estoque_minimo", "minimo": "estoque_minimo",
             "valorunitario": "valor_unitario", "valor": "valor_unitario", "preco": "valor_unitario", "custounitario": "valor_unitario",
@@ -1422,8 +1421,8 @@ def importar_pecas():
             db.session.flush()
             salvar_info_extra_peca(
                 peca.id,
-                dados.get("condicao") or getattr(peca, "condicao", None) or "Nova",
-                dados.get("originalidade") or getattr(peca, "originalidade", None) or "Original",
+                dados.get("condicao") or getattr(peca, "condicao", None) or "Original",
+                "",
             )
 
         db.session.commit()

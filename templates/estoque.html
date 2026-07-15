@@ -19,14 +19,13 @@
     <div class="found-box">
         <b>Pe&ccedil;a encontrada:</b> {{ peca_encontrada.nome }} |
         <b>C&oacute;digo:</b> {{ peca_encontrada.codigo }} |
-        <b>Qtd.:</b> {{ peca_encontrada.quantidade }} |
-        <b>Local:</b> {{ peca_encontrada.localizacao or '-' }}
+        <b>Qtd.:</b> {{ peca_encontrada.quantidade }}
     </div>
     {% elif codigo_lido %}
     <div class="found-box found-warning">
         <b>C&oacute;digo n&atilde;o cadastrado:</b> {{ codigo_lido }}.
         <div class="actions">
-            <a class="btn btn-success" href="{{ url_for('nova_peca', codigo=codigo_lido, localizacao='Oficina') }}">Cadastrar esta pe&ccedil;a</a>
+            <a class="btn btn-success" href="{{ url_for('nova_peca', codigo=codigo_lido) }}">Cadastrar esta pe&ccedil;a</a>
         </div>
     </div>
     {% endif %}
@@ -58,13 +57,11 @@
             <div class="peca-dados">
                 <p><b>C&oacute;digo:</b> {{ peca.codigo or '-' }}</p>
                 <p><b>Marca:</b> {{ peca.fornecedor or '-' }}</p>
-                <p><b>Condi&ccedil;&atilde;o:</b> {{ peca.condicao or '-' }}</p>
-                <p><b>Originalidade:</b> {{ peca.originalidade or '-' }}</p>
+                <p><b>Condi&ccedil;&atilde;o de pe&ccedil;a:</b> {{ peca.condicao or '-' }}</p>
                 <p><b>Quantidade:</b> {{ peca.quantidade }}</p>
                 <p><b>Estoque m&iacute;nimo:</b> {{ peca.estoque_minimo }}</p>
                 <p><b>Valor unit&aacute;rio:</b> R$ {{ "%.2f"|format(peca.valor_unitario or 0) }}</p>
                 <p><b>Total:</b> R$ {{ "%.2f"|format(peca.valor_total) }}</p>
-                <p><b>Local:</b> {{ peca.localizacao or '-' }}</p>
                 <p><b>Fotos:</b> {{ peca.fotos|length }}</p>
             </div>
             {% if peca.fotos|length > 1 %}
