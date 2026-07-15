@@ -57,7 +57,9 @@
             </div>
             <div class="peca-dados">
                 <p><b>C&oacute;digo:</b> {{ peca.codigo or '-' }}</p>
-                <p><b>Fornecedor:</b> {{ peca.fornecedor or '-' }}</p>
+                <p><b>Marca:</b> {{ peca.fornecedor or '-' }}</p>
+                <p><b>Condi&ccedil;&atilde;o:</b> {{ peca.condicao or '-' }}</p>
+                <p><b>Originalidade:</b> {{ peca.originalidade or '-' }}</p>
                 <p><b>Quantidade:</b> {{ peca.quantidade }}</p>
                 <p><b>Estoque m&iacute;nimo:</b> {{ peca.estoque_minimo }}</p>
                 <p><b>Valor unit&aacute;rio:</b> R$ {{ "%.2f"|format(peca.valor_unitario or 0) }}</p>
