@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login - Ponto Do Pneu Auto Center</title>
+    <title>Login - Ponto do Pneu Lataria e Pintura</title>
     <style>
         * { box-sizing: border-box; }
         body {
@@ -38,8 +38,8 @@
 </head>
 <body>
     <div class="login-box">
-        <img class="login-logo" src="{{ url_for('static', filename='logo-ponto-pneu.png') }}" alt="Ponto Do Pneu Auto Center">
-        <h1>Ponto Do Pneu Auto Center</h1>
+        <img class="login-logo" src="{{ url_for('static', filename='logo-ponto-pneu.png') }}" alt="Ponto do Pneu Lataria e Pintura">
+        <h1>Ponto do Pneu Lataria e Pintura</h1>
         <p>Acesse com seu usu&aacute;rio e senha.</p>
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
@@ -55,7 +55,7 @@
             <input id="password" type="password" name="password" autocomplete="current-password" required>
             <button type="submit">Entrar</button>
         </form>
-        <div class="footer">Ponto Do Pneu Auto Center</div>
+        <div class="footer">Ponto do Pneu Lataria e Pintura</div>
     </div>
 </body>
 </html>

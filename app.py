@@ -171,7 +171,7 @@ def xlsx_sheet(rows, widths=None):
 def gerar_xlsx_fechamento(fechamento, itens):
     criado_em = fechamento.criado_em.strftime("%d/%m/%Y %H:%M") if fechamento.criado_em else "-"
     resumo_rows = [
-        xlsx_row(1, ["Ponto Do Pneu Auto Center"], True),
+        xlsx_row(1, ["Ponto do Pneu Lataria e Pintura"], True),
         xlsx_row(2, [f"Relatorio de fechamento financeiro #{fechamento.id}"], True),
         xlsx_row(3, [f"Gerado em {criado_em} por {fechamento.criado_por or '-'}"]),
         xlsx_row(5, ["Campo", "Valor"], True),
@@ -296,7 +296,7 @@ def buscar_veiculo_item_fechamento(item):
 def gerar_docx_fechamento(fechamento, itens):
     criado_em = fechamento.criado_em.strftime("%d/%m/%Y %H:%M") if fechamento.criado_em else "-"
     partes = [
-        docx_paragraph("Ponto Do Pneu Auto Center", True),
+        docx_paragraph("Ponto do Pneu Lataria e Pintura", True),
         docx_paragraph(f"Relatorio de fechamento financeiro #{fechamento.id}", True),
         docx_paragraph(f"Gerado em {criado_em} por {fechamento.criado_por or '-'}"),
         docx_paragraph("Resumo", True),
