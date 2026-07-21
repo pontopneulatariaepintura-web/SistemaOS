@@ -42,7 +42,7 @@ class EstoquePecaFoto(db.Model):
 
     peca = db.relationship("EstoquePeca", backref=db.backref("fotos", lazy=True, cascade="all, delete-orphan"))
 
-ETIQUETA_PECA_TEMPLATE = '<!DOCTYPE html>\n<html lang="pt-br">\n<head>\n    <meta charset="UTF-8">\n    <title>Etiqueta {{ peca.nome }}</title>\n    <style>\n        @page { size: 50mm 30mm; margin: 2mm; }\n        * { box-sizing: border-box; }\n        body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #000; }\n        .etiqueta { width: 46mm; height: 26mm; display: flex; flex-direction: column; justify-content: center; gap: 1.2mm; overflow: hidden; }\n        .nome { font-size: 11px; font-weight: 700; line-height: 1.1; max-height: 8mm; overflow: hidden; }\n        .meta { font-size: 8px; line-height: 1.1; }\n        .barcode { height: 10mm; display: flex; align-items: stretch; gap: 0; }\n        .bar { height: 10mm; display: inline-block; }\n        .black { background: #000; }\n        .white { background: #fff; }\n        .codigo { font-size: 8px; text-align: center; letter-spacing: 1px; }\n        .no-print { margin: 12px; }\n        .btn { display: inline-block; padding: 9px 14px; border-radius: 7px; background: #2563eb; color: white; text-decoration: none; font-weight: bold; border: 0; cursor: pointer; }\n        @media print { .no-print { display: none; } }\n    </style>\n</head>\n<body>\n    <div class="no-print">\n        <button class="btn" onclick="window.print()">Imprimir etiqueta</button>\n    </div>\n    <div class="etiqueta">\n        <div class="nome">{{ peca.nome }}</div>\n        <div class="meta">Local: {{ peca.localizacao or \'Oficina\' }} | Qtd: {{ peca.quantidade or 0 }}</div>\n        <div class="barcode" aria-label="Codigo de barras {{ codigo_barra }}">\n            {% for barra in barras %}\n            <span class="bar {% if barra.preta %}black{% else %}white{% endif %}" style="width: {{ barra.largura }}px"></span>\n            {% endfor %}\n        </div>\n        <div class="codigo">{{ codigo_barra }}</div>\n    </div>\n    {% if auto %}\n    <script>\n        window.addEventListener("load", function () {\n            setTimeout(function () { window.print(); }, 400);\n        });\n    </script>\n    {% endif %}\n</body>\n</html>\n'
+ETIQUETA_PECA_TEMPLATE = '<!DOCTYPE html>\n<html lang="pt-br">\n<head>\n    <meta charset="UTF-8">\n    <title>Etiqueta {{ peca.nome }}</title>\n    <style>\n        @page { size: 50mm 30mm; margin: 2mm; }\n        * { box-sizing: border-box; }\n        body { margin: 0; font-family: Arial, Helvetica, sans-serif; color: #000; }\n        .etiqueta { width: 46mm; height: 26mm; display: flex; flex-direction: column; justify-content: center; gap: 1.2mm; overflow: hidden; }\n        .nome { font-size: 11px; font-weight: 700; line-height: 1.1; max-height: 8mm; overflow: hidden; }\n        .meta { font-size: 8px; line-height: 1.1; }\n        .barcode { height: 10mm; display: flex; align-items: stretch; gap: 0; }\n        .bar { height: 10mm; display: inline-block; }\n        .black { background: #000; }\n        .white { background: #fff; }\n        .codigo { font-size: 8px; text-align: center; letter-spacing: 1px; }\n        .no-print { margin: 12px; }\n        .btn { display: inline-block; padding: 9px 14px; border-radius: 7px; background: #2563eb; color: white; text-decoration: none; font-weight: bold; border: 0; cursor: pointer; }\n        @media print { .no-print { display: none; } }\n    </style>\n</head>\n<body>\n    <div class="no-print">\n        <button class="btn" onclick="window.print()">Imprimir etiqueta</button>\n    </div>\n    <div class="etiqueta">\n        <div class="nome">{{ peca.nome }}</div>\n        <div class="meta">Qtd: {{ peca.quantidade or 0 }} | Numero criado: {{ codigo_original }}</div>\n        <div class="barcode" aria-label="Codigo de barras {{ codigo_original }}">\n            {% for barra in barras %}\n            <span class="bar {% if barra.preta %}black{% else %}white{% endif %}" style="width: {{ barra.largura }}px"></span>\n            {% endfor %}\n        </div>\n        <div class="codigo">{{ codigo_original }}</div>\n    </div>\n    {% if auto %}\n    <script>\n        window.addEventListener("load", function () {\n            setTimeout(function () { window.print(); }, 400);\n        });\n    </script>\n    {% endif %}\n</body>\n</html>\n'
 
 IMPORTAR_PECAS_TEMPLATE = '{% extends "base.html" %}\n{% block title %}Importar pe&ccedil;as{% endblock %}\n{% block content %}\n<div class="panel">\n    <h1>Importar pe&ccedil;as</h1>\n    <p>Envie um arquivo CSV exportado do sistema antigo. O sistema aceita colunas como nome, c&oacute;digo, fornecedor, quantidade, estoque m&iacute;nimo, valor unit&aacute;rio e localiza&ccedil;&atilde;o.</p>\n    <form method="POST" enctype="multipart/form-data" class="form-grid">\n        <div class="full"><label>Arquivo CSV</label><input type="file" name="arquivo" accept=".csv,text/csv" required></div>\n        <div class="full actions"><button class="btn btn-success" type="submit">Importar</button><a class="btn btn-muted" href="{{ url_for(\'estoque\') }}">Voltar</a></div>\n    </form>\n</div>\n<div class="panel">\n    <h2>Modelo de colunas</h2>\n    <p><b>nome;codigo;fornecedor;quantidade;estoque_minimo;valor_unitario;localizacao</b></p>\n    <p>Se a localiza&ccedil;&atilde;o vier vazia, ser&aacute; usada como <b>Oficina</b>.</p>\n</div>\n{% endblock %}\n'
 
@@ -1343,9 +1343,21 @@ def zerar_estoque():
 @login_required
 def etiqueta_peca(id):
     peca = EstoquePeca.query.get_or_404(id)
-    codigo_barra, barras = code39_barras(peca.codigo or peca.id)
+    codigo_original = (peca.codigo or "").strip()
+    if not codigo_original:
+        flash("Cadastre um código na peça antes de imprimir a etiqueta.", "warning")
+        return redirect(url_for("editar_peca", id=peca.id))
+
+    codigo_barra, barras = code39_barras(codigo_original)
     auto = request.args.get("auto") == "1"
-    return render_template_string(ETIQUETA_PECA_TEMPLATE, peca=peca, codigo_barra=codigo_barra, barras=barras, auto=auto)
+    return render_template_string(
+        ETIQUETA_PECA_TEMPLATE,
+        peca=peca,
+        codigo_original=codigo_original,
+        codigo_barra=codigo_barra,
+        barras=barras,
+        auto=auto,
+    )
 
 
 @app.route("/estoque/importar", methods=["GET", "POST"])
