@@ -1239,10 +1239,17 @@ def estoque():
         if peca_encontrada:
             query = query.filter(EstoquePeca.id == peca_encontrada.id)
         else:
-            query = query.filter(EstoquePeca.codigo == codigo_lido)
-            flash("Nenhuma peça encontrada com esse código de barras.", "warning")
+            termo = f"%{codigo_lido}%"
+            query = query.filter(
+                db.or_(
+                    EstoquePeca.nome.ilike(termo),
+                    EstoquePeca.codigo.ilike(termo),
+                )
+            )
 
     pecas = aplicar_info_extra_pecas(query.order_by(EstoquePeca.nome).all())
+    if codigo_lido and not peca_encontrada and not pecas:
+        flash("Nenhuma peça encontrada com essa pesquisa.", "warning")
     if peca_encontrada:
         aplicar_info_extra_peca(peca_encontrada)
     total_pecas = sum(peca.quantidade or 0 for peca in pecas)

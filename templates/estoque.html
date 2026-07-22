@@ -5,11 +5,11 @@
     <h1>Pe&ccedil;as em estoque</h1>
     <p><b>Total de unidades:</b> {{ total_pecas }} | <b>Valor estimado:</b> R$ {{ "%.2f"|format(valor_total) }}</p>
     <form class="barcode-form" method="GET" action="{{ url_for('estoque') }}">
-        <label for="codigo">Ler c&oacute;digo de barras</label>
-        <p class="scan-hint">Pode passar a pistola em qualquer ponto desta tela. Se preferir, clique no campo abaixo e leia o c&oacute;digo.</p>
+        <label for="codigo">Pesquisar pe&ccedil;a por nome ou c&oacute;digo</label>
+        <p class="scan-hint">Digite o nome da pe&ccedil;a ou leia o c&oacute;digo de barras com a pistola.</p>
         <div class="barcode-row">
-            <input id="codigo" name="codigo" type="search" value="{{ codigo_lido or '' }}" placeholder="Passe a pistola ou digite o c&oacute;digo" autocomplete="off" inputmode="numeric" autofocus>
-            <button class="btn btn-primary" type="submit">Buscar pe&ccedil;a</button>
+            <input id="codigo" name="codigo" type="search" value="{{ codigo_lido or '' }}" placeholder="Digite o nome ou passe a pistola" autocomplete="off" inputmode="numeric" autofocus>
+            <button class="btn btn-primary" type="submit">Pesquisar</button>
             {% if codigo_lido %}
             <a class="btn btn-muted" href="{{ url_for('estoque') }}">Limpar</a>
             {% endif %}
@@ -23,7 +23,7 @@
     </div>
     {% elif codigo_lido %}
     <div class="found-box found-warning">
-        <b>C&oacute;digo n&atilde;o cadastrado:</b> {{ codigo_lido }}.
+        <b>Nenhuma pe&ccedil;a encontrada:</b> {{ codigo_lido }}.
         <div class="actions">
             <a class="btn btn-success" href="{{ url_for('nova_peca', codigo=codigo_lido) }}">Cadastrar esta pe&ccedil;a</a>
         </div>
